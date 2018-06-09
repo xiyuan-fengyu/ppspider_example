@@ -4,7 +4,6 @@
   "description": "ppspider template",
   "private": true,
   "scripts": {
-    "npm install": "npm install",
     "auto build": "tsc"
   },
   "dependencies": {
