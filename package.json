@@ -1,0 +1,18 @@
+{
+  "name": "ppspider_template",
+  "version": "1.0.0",
+  "description": "ppspider template",
+  "private": true,
+  "scripts": {
+    "npm install": "npm install",
+    "auto build": "tsc"
+  },
+  "dependencies": {
+    "ppspider": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/jquery": "^3.3.1",
+    "@types/node": "^9.4.7",
+    "@types/puppeteer": "^1.2.0"
+  }
+}

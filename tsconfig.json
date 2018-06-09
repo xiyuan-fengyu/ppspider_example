@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es6",
+    "removeComments": true,
+    "noImplicitAny": false,
+    "sourceMap": true,
+    "declaration": false,
+    "rootDir":"./src",
+    "outDir":"./lib",
+    "experimentalDecorators": true,
+    "watch":true
+  },
+  "include":[
+    "./src/**/*"
+  ],
+  "exclude":[
+  ]
+}
