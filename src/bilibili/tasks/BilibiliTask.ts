@@ -14,11 +14,14 @@ export class BilibiliTask {
 
     @JobOverride("video")
     overrideVideoJob(job: Job) {
-        const avIdMatch = job.url().match("/video/av(\\d+).+?([?&]p=(\\d+))?");
-        if (avIdMatch) {
+        const match = job.url().match("/video/av(\\d+).+?([?&]p=(\\d+))?");
+        if (match) {
             // 获取av id 和分页信息，组合成新的唯一avId，用于过滤
-            const avId = avIdMatch[1] + (avIdMatch[3] ? "_" + avIdMatch[3] : "");
-            job.key(avId);
+            const avId = match[1];
+            const pNum = match[3] || "0";
+            job.key(avId + "_" + pNum);
+            job.datas().id = avId;
+            job.datas().p = pNum;
         }
     }
 
@@ -76,14 +79,15 @@ export class BilibiliTask {
         exeInterval: 5000
     })
     async video(page: Page, job: Job): AddToQueueData {
-        const avId = job.key();
+        const id = job.datas().id;
+        const p = job.datas().p;
 
         await PuppeteerUtil.defaultViewPort(page);
         await PuppeteerUtil.setImgLoad(page, false);
 
         const tagsResWait = PuppeteerUtil.onceResponse(page, "api.bilibili.com/x/tag/archive/tags", async response => {
             const tags = PuppeteerUtil.jsonp(await response.text());
-            FileUtil.write(appInfo.workplace + "/data/video/" + avId + "/tags.json", JSON.stringify(tags));
+            FileUtil.write(appInfo.workplace + "/data/video/" + id + "/" + p + "/tags.json", JSON.stringify(tags));
         });
 
         await page.goto(job.url());
