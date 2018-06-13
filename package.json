@@ -7,7 +7,7 @@
     "auto build": "tsc"
   },
   "dependencies": {
-    "ppspider": "latest"
+    "ppspider": "^0.1.2"
   },
   "devDependencies": {
     "@types/jquery": "^3.3.1",
