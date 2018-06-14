@@ -11,7 +11,8 @@ import {BilibiliTask} from "./tasks/BilibiliTask";
     ],
     workerFactorys: [
         new PuppeteerWorkerFactory({
-            headless: false
+            headless: false,
+            devtools: true
         })
     ]
 })
