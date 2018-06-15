@@ -12,64 +12,64 @@ import {Page} from "puppeteer";
 
 export class BilibiliTask {
 
-    // @JobOverride("video")
-    // overrideVideoJob(job: Job) {
-    //     const match = job.url().match("/video/av(\\d+).+?([?&]p=(\\d+))?");
-    //     if (match) {
-    //         // 获取av id 和分页信息，组合成新的唯一avId，用于过滤
-    //         const avId = match[1];
-    //         const pNum = match[3] || "0";
-    //         job.key(avId + "_" + pNum);
-    //         job.datas().id = avId;
-    //         job.datas().p = pNum;
-    //     }
-    // }
-    //
-    // @OnStart({
-    //     urls: "https://www.bilibili.com/",
-    //     workerFactory: PuppeteerWorkerFactory
-    // })
-    // @AddToQueue([
-    //     {
-    //         name: "video"
-    //     },
-    //     {
-    //         name: "other"
-    //     }
-    // ])
-    // @FromQueue({
-    //     name: "other",
-    //     workerFactory: PuppeteerWorkerFactory,
-    //     exeInterval: 5000
-    // })
-    // async roam(page: Page, job: Job): AddToQueueData {
-    //     await PuppeteerUtil.defaultViewPort(page);
-    //     await PuppeteerUtil.setImgLoad(page, false);
-    //     await page.goto(job.url());
-    //     await PuppeteerUtil.scrollToBottom(page);
-    //     return await PuppeteerUtil.links(page, {
-    //         video: ".*bilibili.*/video/av.*",
-    //         other: ".*bilibili.*"
-    //     });
-    // }
+    @JobOverride("video")
+    overrideVideoJob(job: Job) {
+        const match = job.url().match("/video/av(\\d+).+?([?&]p=(\\d+))?");
+        if (match) {
+            // 获取av id 和分页信息，组合成新的唯一avId，用于过滤
+            const avId = match[1];
+            const pNum = match[3] || "0";
+            job.key(avId + "_" + pNum);
+            job.datas().id = avId;
+            job.datas().p = pNum;
+        }
+    }
 
     @OnStart({
-        urls: "https://www.bilibili.com/video/av24749339/?spm_id_from=333.334.chief_recommend.16",
+        urls: "https://www.bilibili.com/",
         workerFactory: PuppeteerWorkerFactory
     })
-    // @AddToQueue([
-    //     {
-    //         name: "video"
-    //     },
-    //     {
-    //         name: "other"
-    //     }
-    // ])
-    // @FromQueue({
-    //     name: "video",
-    //     workerFactory: PuppeteerWorkerFactory,
-    //     exeInterval: 5000
+    @AddToQueue([
+        {
+            name: "video"
+        },
+        {
+            name: "other"
+        }
+    ])
+    @FromQueue({
+        name: "other",
+        workerFactory: PuppeteerWorkerFactory,
+        exeInterval: 5000
+    })
+    async roam(page: Page, job: Job): AddToQueueData {
+        await PuppeteerUtil.defaultViewPort(page);
+        await PuppeteerUtil.setImgLoad(page, false);
+        await page.goto(job.url());
+        await PuppeteerUtil.scrollToBottom(page);
+        return await PuppeteerUtil.links(page, {
+            video: ".*bilibili.*/video/av.*",
+            other: ".*bilibili.*"
+        });
+    }
+
+    // @OnStart({
+    //     urls: "https://www.bilibili.com/video/av24749339/?spm_id_from=333.334.chief_recommend.16",
+    //     workerFactory: PuppeteerWorkerFactory
     // })
+    @AddToQueue([
+        {
+            name: "video"
+        },
+        {
+            name: "other"
+        }
+    ])
+    @FromQueue({
+        name: "video",
+        workerFactory: PuppeteerWorkerFactory,
+        exeInterval: 5000
+    })
     async video(page: Page, job: Job): AddToQueueData {
         const id = job.datas().id;
         const p = job.datas().p;
@@ -122,7 +122,7 @@ export class BilibiliTask {
             const userA = $("#v_upinfo .user a:eq(0)");
             const userAHref = (userA[0] as any).href;
             tempVideoInfo.user = {
-                id: userAHref.substring(userAHref.lastIndexOf("/")),
+                id: userAHref.substring(userAHref.lastIndexOf("/") + 1),
                 name: userA.text()
             };
             tempVideoInfo.desc = $("#v_desc .info").text();
@@ -149,15 +149,15 @@ export class BilibiliTask {
         }
         else {
             // 点击换页，并监听接口返回结果
-            const pageBtnSelector = `#comment .bottom-page.paging-box-big a:contains('${pageIndex}')`;
-            const pageBtnCount = await PuppeteerUtil.count(page, pageBtnSelector, false);
-            if (pageBtnCount == 0) return;
+            const pageBtnId = await PuppeteerUtil.specifyIdByJquery(page,
+                `#comment .bottom-page.paging-box-big a:contains('${pageIndex}')`);
+            if (!pageBtnId) return;
 
             replyResWait = PuppeteerUtil.onceResponse(page, "api.bilibili.com/x/v2/reply", async response => {
                 const reply = PuppeteerUtil.jsonp(await response.text());
                 FileUtil.write(dataDir + "/reply/" + pageIndex + ".json", JSON.stringify(reply));
             });
-            page.tap(pageBtnSelector);
+            page.tap("#" + pageBtnId[0]);
             await replyResWait;
         }
 
