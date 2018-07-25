@@ -1,4 +1,4 @@
-import {appInfo, Job, OnStart, PuppeteerUtil, PuppeteerWorkerFactory} from "ppspider";
+import {appInfo, Job, logger, OnStart, PuppeteerUtil, PuppeteerWorkerFactory} from "ppspider";
 import {Page} from "puppeteer";
 
 export class TestTask {
@@ -14,19 +14,19 @@ export class TestTask {
 
         const hisResWait = PuppeteerUtil.onceResponse(page, "https://www.baidu.com/his\\?.*", async response => {
             const resStr = await response.text();
-            console.log(resStr);
+            logger.debug(resStr);
             const resJson = PuppeteerUtil.jsonp(resStr);
-            console.log(resJson);
+            logger.debug(JSON.stringify(resJson, null, 4));
         });
 
         await page.goto("http://www.baidu.com");
         await PuppeteerUtil.scrollToBottom(page, 5000, 100, 1000);
 
         await PuppeteerUtil.addJquery(page);
-        console.log(await hisResWait);
+        logger.debug(JSON.stringify(await hisResWait, null, 4));
 
         const downloadImgRes = await PuppeteerUtil.downloadImg(page, ".index-logo-src", appInfo.workplace + "/download/img");
-        console.log(downloadImgRes);
+        logger.debug(JSON.stringify(await downloadImgRes, null, 4));
 
         const href = await PuppeteerUtil.links(page, {
             "index": ["#result_logo", ".*"],
@@ -36,14 +36,14 @@ export class TestTask {
                 if (href.startsWith("http")) return href;
             }
         });
-        console.log(href);
+        logger.debug(href);
 
         const count = await PuppeteerUtil.count(page, "#result_logo");
-        console.log(count);
+        logger.debug("" + count);
 
         const ids = await PuppeteerUtil.specifyIdByJquery(page, "a:visible:contains('登录')");
         if (ids) {
-            console.log(ids);
+            logger.debug(JSON.stringify(ids, null, 4));
             await page.tap("#" + ids[0]);
         }
     }

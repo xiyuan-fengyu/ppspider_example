@@ -1,4 +1,13 @@
-import {AddToQueue, AddToQueueData, FromQueue, Job, OnStart, PuppeteerUtil, PuppeteerWorkerFactory} from "ppspider";
+import {
+    AddToQueue,
+    AddToQueueData,
+    FromQueue,
+    Job,
+    logger,
+    OnStart,
+    PuppeteerUtil,
+    PuppeteerWorkerFactory
+} from "ppspider";
 import {Page} from "puppeteer";
 
 export class TestTask {
@@ -28,7 +37,7 @@ export class TestTask {
         exeInterval: 1000
     })
     async printUrl(page: Page, job: Job) {
-        console.log(job.url());
+        logger.debug(job.url());
     }
 
 }

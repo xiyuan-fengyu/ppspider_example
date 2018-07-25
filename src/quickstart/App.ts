@@ -1,5 +1,9 @@
-import {Launcher, PuppeteerWorkerFactory} from "ppspider";
+import {Launcher, logger, PuppeteerWorkerFactory} from "ppspider";
 import {TestTask} from "./tasks/TestTask";
+import {config} from "./config";
+
+// import * as puppeteer from "puppeteer";
+// logger.debug(puppeteer.executablePath());
 
 @Launcher({
     workplace: __dirname + "/workplace",
@@ -7,9 +11,7 @@ import {TestTask} from "./tasks/TestTask";
         TestTask
     ],
     workerFactorys: [
-        new PuppeteerWorkerFactory({
-            headless: false
-        })
+        new PuppeteerWorkerFactory(config.puppeteer)
     ]
 })
 class App {

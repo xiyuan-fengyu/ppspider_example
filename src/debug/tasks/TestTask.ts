@@ -1,4 +1,4 @@
-import {Job, OnStart, PuppeteerWorkerFactory} from "ppspider";
+import {Job, logger, OnStart, PuppeteerWorkerFactory} from "ppspider";
 import {Page} from "puppeteer";
 
 export class TestTask {
@@ -15,7 +15,7 @@ export class TestTask {
            console.log(title);
            return title;
         });
-        console.log(title);
+        logger.debug(title);
     }
 
 }

@@ -1,4 +1,4 @@
-import {Job, PuppeteerWorkerFactory, OnTime, DateUtil} from "ppspider";
+import {Job, PuppeteerWorkerFactory, OnTime, DateUtil, logger} from "ppspider";
 import {Page} from "puppeteer";
 
 export class TestTask {
@@ -9,7 +9,7 @@ export class TestTask {
         workerFactory: PuppeteerWorkerFactory
     })
     async index(page: Page, job: Job) {
-        console.log(DateUtil.toStr());
+        logger.debug(DateUtil.toStr());
     }
 
 }

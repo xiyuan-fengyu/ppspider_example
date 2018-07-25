@@ -1,4 +1,4 @@
-import {Job, OnStart, PuppeteerUtil, PuppeteerWorkerFactory} from "ppspider";
+import {Job, logger, OnStart, PuppeteerUtil, PuppeteerWorkerFactory} from "ppspider";
 import {Page} from "puppeteer";
 
 export class TestTask {
@@ -12,7 +12,7 @@ export class TestTask {
         const urls = await PuppeteerUtil.links(page, {
             "all": "http.*"
         });
-        console.log(urls);
+        logger.debug(JSON.stringify(urls, null, 4));
     }
 
 }
