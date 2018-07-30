@@ -12,7 +12,7 @@ export class TestTask {
         const urls = await PuppeteerUtil.links(page, {
             "all": "http.*"
         });
-        logger.debug(JSON.stringify(urls, null, 4));
+        logger.debugValid && logger.debug(JSON.stringify(urls, null, 4));
     }
 
 }

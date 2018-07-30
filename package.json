@@ -7,11 +7,15 @@
     "auto build": "tsc"
   },
   "dependencies": {
-    "ppspider": "^0.1.13"
+    "mysql": "^2.16.0",
+    "ppspider": "^0.1.15",
+    "ssh2": "^0.6.1"
   },
   "devDependencies": {
     "@types/jquery": "^3.3.1",
+    "@types/mysql": "^2.15.5",
     "@types/node": "^9.4.7",
-    "@types/puppeteer": "^1.2.0"
+    "@types/puppeteer": "^1.2.0",
+    "@types/ssh2": "^0.5.35"
   }
 }
