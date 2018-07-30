@@ -14,7 +14,7 @@ export const config = {
             host: "192.168.1.150",
             port: 22,
             username: "root",
-            password: "im0918",
+            password: "123456",
             keepaliveInterval: 30000, // 每隔 n 毫秒发送一个心跳包，用于保活
             keepaliveCountMax: 60 // 在确认连接断开之前，发送心跳包的最大数量
         },
