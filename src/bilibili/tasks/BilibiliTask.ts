@@ -76,7 +76,7 @@ export class BilibiliTask {
         const dataDir = appInfo.workplace + "/data/video/" + id + "/" + p;
 
         await PuppeteerUtil.defaultViewPort(page);
-        // await PuppeteerUtil.setImgLoad(page, false); // @TODO 2018-07-30 目前 puppeteer 存在 bug，导致 reponse 丢失
+        await PuppeteerUtil.setImgLoad(page, false);
 
         // 抓取视频的统计量 https://api.bilibili.com/x/web-interface/archive/stat?aid=24716572
         const countResWait = PuppeteerUtil.onceResponse(page, "api.bilibili.com/x/web-interface/archive/stat", async response => {

@@ -67,13 +67,7 @@ export class QqMusicTask {
 
         const songId = job.key();
 
-        /*
-        @TODO 2018-07-30 待puppeteer bug 修复后，取消这个注释
-        puppeteer 1.6.1 page.setRequestInterception(true) 之后，
-        会导致 page.on("response", listener) 丢失一些 response，从而抓不到数据
-        PuppeteerUtil.setImgLoad(page, false) 中会触发 page.setRequestInterception(true)
-         */
-        // await PuppeteerUtil.setImgLoad(page, false);
+        await PuppeteerUtil.setImgLoad(page, false);
 
         const songRes = PuppeteerUtil.onceResponse(page,
             "https://c.y.qq.com/v8/fcg-bin/fcg_play_single_song.fcg\\?.*", async response => {

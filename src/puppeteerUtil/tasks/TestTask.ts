@@ -10,8 +10,7 @@ export class TestTask {
     async index(page: Page, job: Job) {
         await PuppeteerUtil.defaultViewPort(page);
 
-        // @TODO 2018-07-30 目前 puppeteer 存在 bug，导致 reponse 丢失
-        // await PuppeteerUtil.setImgLoad(page, false);
+        await PuppeteerUtil.setImgLoad(page, false);
 
         const hisResWait = PuppeteerUtil.onceResponse(page, "https://www.baidu.com/his\\?.*", async response => {
             const resStr = await response.text();
@@ -21,7 +20,7 @@ export class TestTask {
         });
 
         await page.goto("http://www.baidu.com");
-        // logger.debug(JSON.stringify(await hisResWait, null, 4));
+        logger.debug(JSON.stringify(await hisResWait, null, 4));
 
         await PuppeteerUtil.addJquery(page);
         await PuppeteerUtil.scrollToBottom(page, 5000, 100, 1000);

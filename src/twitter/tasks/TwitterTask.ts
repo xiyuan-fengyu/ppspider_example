@@ -222,24 +222,14 @@ export class TwitterTask {
             setTimeout(() => resolve(null), 30000);
             userInfoResolve = resolve;
         });
-        const pageClient = page["_client"];
-        pageClient.on("Network.responseReceived", event => {
-            if (event.response.url.match(".*/graphql/.*")) {
-                pageClient.send('Network.getResponseBody', {
-                    requestId: event.requestId
-                }).then(response => {
-                    const body = response.body;
-                    if (body) {
-                        try {
-                            const json = JSON.parse(body);
-                            if (json.data && json.data.user && json.data.user.legacy) {
-                                userInfoResolve(json.data.user.legacy);
-                            }
-                        }
-                        catch (e) {
-                        }
-                    }
-                });
+        PuppeteerUtil.onResponse(page, ".*/graphql/.*", async response => {
+            try {
+                const json = await response.json();
+                if (json.data && json.data.user && json.data.user.legacy) {
+                    userInfoResolve(json.data.user.legacy);
+                }
+            }
+            catch (e) {
             }
         });
         await page.goto(job.url());
