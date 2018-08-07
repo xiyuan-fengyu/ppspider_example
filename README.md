@@ -42,10 +42,6 @@
 ## src/twitter
 抓取推特上一些主题相关的讨论以及用户信息    
 
-这个例子中演示了 puppeteer 1.6.1 response 丢失的bug的处理方案  
-通过 Network.responseReceived 监听 response  
-通过 Network.getResponseBody 获取 reponse body  
-
 修改 src/twitter/movies.ts 添加主题  
 每行一个  
 ```
