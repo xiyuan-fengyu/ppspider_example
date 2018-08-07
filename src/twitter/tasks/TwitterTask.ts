@@ -249,7 +249,7 @@ export class TwitterTask {
         });
         await page.goto(job.url());
 
-        let userInfo = await waitUserInfo;
+        let userInfo: any = await waitUserInfo;
         const userId = job.datas().id;
         if (userInfo == null) {
             // 监听用户信息的相应超时，抛出异常，任务失败，任务将会重试两次
@@ -257,7 +257,12 @@ export class TwitterTask {
         }
 
         logger.debugValid && logger.debug(JSON.stringify(userInfo, null, 4));
-        FileUtil.write(appInfo.workplace + "/data/users/" + userId + ".json", JSON.stringify(userInfo));
+        if (!userInfo.errors) {
+            FileUtil.write(appInfo.workplace + "/data/users/" + userId + ".json", JSON.stringify(userInfo));
+        }
+        else {
+            logger.warnValid && logger.warn(`fail to get userInfo, id: ${userId}\n${JSON.stringify(userInfo, null, 4)}`);
+        }
     }
 
 }
