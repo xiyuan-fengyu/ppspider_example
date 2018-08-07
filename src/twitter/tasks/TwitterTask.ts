@@ -70,6 +70,8 @@ export class TwitterTask {
             const scrollAndCheckInterval = config.scrollAndCheckInterval;
 
             let scrollAndCheckNum = 0;
+
+            // 从一个div中解析出一个评论
             const parseComment = $comment => {
                 try {
                     const comment: any = {
@@ -121,6 +123,8 @@ export class TwitterTask {
 
 
             let $curCommentBox = null;
+
+            // 抓取一个评论并向下滚动一个评论的高度，如果下面没有更多评论，则尝试向下滚动加载更多，然后检测时候有新评论
             const scrollAndCheck = () => {
                 let tempScrollAndCheckInterval = 50;
                 if ($curCommentBox === null) {
@@ -128,6 +132,11 @@ export class TwitterTask {
                     if ($comments.length) {
                         $curCommentBox = $($comments[0]).parent().parent().parent();
                         scrollAndCheckNum = 0;
+                    }
+                    else {
+                        // 如果一直监听不到正文，滚动超时后任务结束
+                        scrollAndCheckNum++;
+                        tempScrollAndCheckInterval = scrollAndCheckInterval;
                     }
                 }
                 else {
@@ -199,7 +208,7 @@ export class TwitterTask {
 
     // @OnStart({
     //     description: "测试",
-    //     urls: "https://mobile.twitter.com/LoremasterNojah",
+    //     urls: "https://mobile.twitter.com/someUserId",
     //     workerFactory: PuppeteerWorkerFactory,
     //     parallel: 1,
     //     exeInterval: 10000000
@@ -228,6 +237,12 @@ export class TwitterTask {
                 if (json.data && json.data.user && json.data.user.legacy) {
                     userInfoResolve(json.data.user.legacy);
                 }
+                else if (json.errors) {
+                    // 已知错误：用户已被冻结
+                    userInfoResolve({
+                        errors: json.errors
+                    });
+                }
             }
             catch (e) {
             }
@@ -237,6 +252,7 @@ export class TwitterTask {
         let userInfo = await waitUserInfo;
         const userId = job.datas().id;
         if (userInfo == null) {
+            // 监听用户信息的相应超时，抛出异常，任务失败，任务将会重试两次
             throw new Error(`fail to get userInfo, id: ${userId}`);
         }
 
