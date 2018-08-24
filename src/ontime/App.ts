@@ -7,9 +7,10 @@ import {TestTask} from "./tasks/TestTask";
         TestTask
     ],
     workerFactorys: [
-        new PuppeteerWorkerFactory({
-            headless: false
-        })
+        // 这个例子中没有用到 puppeteer, 所以不用注入 PuppeteerWorkerFactory 实例
+        // new PuppeteerWorkerFactory({
+        //     headless: false
+        // })
     ]
 })
 class App {

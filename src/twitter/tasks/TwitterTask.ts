@@ -6,7 +6,7 @@ import {
     FileUtil,
     FromQueue,
     Job,
-    logger,
+    logger, NoneWorkerFactory,
     OnStart,
     PuppeteerUtil,
     PuppeteerWorkerFactory
@@ -19,14 +19,14 @@ export class TwitterTask {
 
     @OnStart({
         description: "从 topics 把所有任务加载到 topics 队列中",
-        urls: "useless url, but cannot be empty",
-        workerFactory: PuppeteerWorkerFactory,
+        urls: "",
+        workerFactory: NoneWorkerFactory,
         parallel: 1
     })
     @AddToQueue({
         name: "topics"
     })
-    async index(page: Page, job: Job): AddToQueueData {
+    async index(worker: any, job: Job): AddToQueueData {
         // return "http://www.baidu.com";
         return topics.map(item => {
             const url = `https://mobile.twitter.com/search?q=${encodeURI(item)}&src=typed_query`;
@@ -48,7 +48,7 @@ export class TwitterTask {
     @AddToQueue({
         name: "users"
     })
-    async movie(page: Page, job: Job): AddToQueueData {
+    async topic(page: Page, job: Job): AddToQueueData {
         await Promise.all([
             PuppeteerUtil.defaultViewPort(page),
             PuppeteerUtil.setImgLoad(page, false)
@@ -58,18 +58,11 @@ export class TwitterTask {
         await PuppeteerUtil.addJquery(page);
 
         const comments = await page.evaluate(config => new Promise(resolve => {
-            // debugger;
             const $ = jQuery;
             const comments = [];
 
             // 超时直接返回结果
             setTimeout(() => resolve(comments), config.movieTaskTimeout);
-
-            const commentMaxNum = config.commentMaxNum;
-            const scrollAndCheckMaxNum = config.scrollAndCheckMaxNum;
-            const scrollAndCheckInterval = config.scrollAndCheckInterval;
-
-            let scrollAndCheckNum = 0;
 
             // 从一个div中解析出一个评论
             const parseComment = $comment => {
@@ -77,39 +70,40 @@ export class TwitterTask {
                     const comment: any = {
                         count: {}
                     };
-
-                    const $mainDivs = $comment.find("> div:eq(1) > div:eq(0) > div");
+                    const $infoDivs = $comment.find("> div:eq(1) > div:eq(0) > div");
 
                     // 用户信息
-                    const $userA = $($mainDivs[0]).find("> div:eq(0) > a:eq(0)");
+                    const $userA = $($infoDivs[0]).find("a:eq(0)");
                     comment.user = $userA.attr("href").substring(1).split("/")[0];
 
                     // comment.user.name = $userA.find("span[dir='auto']:eq(0)").text().trim();
 
                     // 发表时间
-                    comment.time = $($mainDivs[0]).find("> div:eq(0) > a:eq(1) time").attr("datetime");
+                    comment.time = $($infoDivs[0]).find("time:eq(0)").attr("datetime");
 
-                    if ($mainDivs.length == 3) {
+                    let isReplyToOthers = false;
+                    if ($infoDivs.length >= 2) {
                         // 回复他人
-                        const replyTos = $($mainDivs[1]).find("a:eq(0) span[dir='auto']").text().trim().split(" ");
-                        replyTos.forEach(replyTo => {
-                            if (replyTo.startsWith("@")) {
-                                if (!comment.replyTos) comment.replyTos = [];
-                                comment.replyTos.push(replyTo.substring(1));
+                        const replyTos = $($infoDivs[1]).find("a span[dir='auto']").text().trim().split("@").filter(item => item);
+                        if (replyTos.length > 0) {
+                            if (!comment.replyTos) comment.replyTos = [];
+                            for (let replyTo of replyTos) {
+                                comment.replyTos.push(replyTo);
                             }
-                        });
+                            isReplyToOthers = true;
+                        }
                     }
 
                     // 内容
-                    comment.content = $($mainDivs[$mainDivs.length - 1]).text();
+                    comment.content = $($infoDivs[isReplyToOthers ? 2 : 1]).text();
 
                     // 推文相关数字统计
                     const $countDivs = $comment.find("> div:eq(1) > div:eq(1) > div");
                     const countKey = ["reply", "forward", "like"];
                     for (let i = 0, len = $countDivs.length; i < 3 && i < len; i++) {
-                        const $svgCountDivs = $($countDivs[i]).find("> div:eq(0) > div:eq(0) > div");
-                        if ($svgCountDivs.length == 2) {
-                            comment.count[countKey[i]] = parseInt($($svgCountDivs[1]).text());
+                        const $countDiv = $($countDivs[i]).find("svg:eq(0)").parent().next();
+                        if ($countDiv.length) {
+                            comment.count[countKey[i]] = parseInt($countDiv.text());
                         }
                         else comment.count[countKey[i]] = 0;
                     }
@@ -121,59 +115,66 @@ export class TwitterTask {
                 }
             };
 
+            const commentMaxNum = config.commentMaxNum;
+            const scrollAndCheckMaxNum = config.scrollAndCheckMaxNum;
+            const scrollAndCheckInterval = config.scrollAndCheckInterval;
 
-            let $curCommentBox = null;
+            let curComment = null;
+            let curCommentNum = 0;
+            let scrollAndCheckNum = 0;
 
             // 抓取一个评论并向下滚动一个评论的高度，如果下面没有更多评论，则尝试向下滚动加载更多，然后检测时候有新评论
             const scrollAndCheck = () => {
-                let tempScrollAndCheckInterval = 50;
-                if ($curCommentBox === null) {
-                    const $comments = $("article > div[data-testid='tweet']");
-                    if ($comments.length) {
-                        $curCommentBox = $($comments[0]).parent().parent().parent();
-                        scrollAndCheckNum = 0;
+                let waitMore = false;
+                const $comments = $("article > div[data-testid='tweet']");
+                if ($comments.length) {
+                    if (curComment == null) {
+                        curComment = $comments[0];
                     }
                     else {
-                        // 如果一直监听不到正文，滚动超时后任务结束
-                        scrollAndCheckNum++;
-                        tempScrollAndCheckInterval = scrollAndCheckInterval;
+                        for (let j = 0, len = $comments.length; j < len; j++) {
+                            if ($comments[j] === curComment) {
+                                if (j + 1 < len) {
+                                    curComment = $comments[j + 1];
+                                    break;
+                                }
+                                else {
+                                    waitMore = true;
+                                }
+                            }
+                        }
                     }
                 }
                 else {
-                    let $next = $curCommentBox.next();
-                    if ($next.length) {
-                        $curCommentBox = $next;
-                        scrollAndCheckNum = 0;
-                    }
-                    else {
-                        $next = $($curCommentBox.prevObject[0]).next();
-                        if ($next.length && $next[0] != $curCommentBox[0]) {
-                            $curCommentBox = $next;
-                            scrollAndCheckNum = 0;
-                        }
-                        else {
-                            scrollAndCheckNum++;
-                            tempScrollAndCheckInterval = scrollAndCheckInterval;
-                        }
-                    }
+                    waitMore = true;
                 }
 
-                if (scrollAndCheckNum == 0 && $curCommentBox && $curCommentBox.length) {
-                    const comment = parseComment($curCommentBox.find("article > div[data-testid='tweet']"));
+                if (waitMore) {
+                    scrollAndCheckNum++;
+                    if (scrollAndCheckNum < scrollAndCheckMaxNum) {
+                        window.scrollBy(0, 1000);
+                        setTimeout(scrollAndCheck, scrollAndCheckInterval);
+                    }
+                    else {
+                        resolve(comments);
+                    }
+                }
+                else {
+                    curCommentNum++;
+                    scrollAndCheckNum = 0;
+
+                    const comment = parseComment($(curComment));
                     if (comment) {
                         comments.push(comment);
                     }
-                    window.scrollBy(0, $curCommentBox.height());
-                }
-                else {
-                    window.scrollBy(0, 100);
-                }
 
-                if (scrollAndCheckNum >= scrollAndCheckMaxNum || comments.length >= commentMaxNum) {
-                    resolve(comments);
-                }
-                else {
-                    setTimeout(scrollAndCheck, tempScrollAndCheckInterval);
+                    if (curCommentNum < commentMaxNum) {
+                        window.scrollBy(0, $(curComment).height());
+                        setTimeout(scrollAndCheck, 50);
+                    }
+                    else {
+                        resolve(comments);
+                    }
                 }
             };
             scrollAndCheck();

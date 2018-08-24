@@ -3,7 +3,7 @@ import {
     AddToQueueData,
     FromQueue,
     Job,
-    logger,
+    logger, NoneWorkerFactory,
     OnStart,
     PuppeteerUtil,
     PuppeteerWorkerFactory
@@ -32,11 +32,11 @@ export class TestTask {
 
     @FromQueue({
         name: "test",
-        workerFactory: PuppeteerWorkerFactory,
+        workerFactory: NoneWorkerFactory,
         parallel: 1,
         exeInterval: 1000
     })
-    async printUrl(page: Page, job: Job) {
+    async printUrl(useless: any, job: Job) {
         logger.debug(job.url());
     }
 

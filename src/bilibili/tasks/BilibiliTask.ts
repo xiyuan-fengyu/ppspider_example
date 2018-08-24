@@ -54,7 +54,7 @@ export class BilibiliTask {
     }
 
     // @OnStart({
-    //     urls: "https://www.bilibili.com/video/av24749339/?spm_id_from=333.334.chief_recommend.16",
+    //     urls: "https://www.bilibili.com/video/av30025082/",
     //     workerFactory: PuppeteerWorkerFactory
     // })
     @AddToQueue([
@@ -119,7 +119,7 @@ export class BilibiliTask {
             tempVideoInfo.classification = $viewbox_report.find(".tminfo .crumb").text().split(" > ");
             tempVideoInfo.time = $viewbox_report.find(".tminfo time").text();
 
-            const userA = $("#v_upinfo .user a:eq(0)");
+            const userA = $("#v_upinfo a[report-id='name']");
             const userAHref = (userA[0] as any).href;
             tempVideoInfo.user = {
                 id: userAHref.substring(userAHref.lastIndexOf("/") + 1),

@@ -11,7 +11,7 @@ export const config = {
             // 抓取一个电影的信息的超时时间(单位：毫秒)
             movieTaskTimeout: 1000 * 60 * 20,
             // 一个电影最多抓取多少条评论
-            commentMaxNum: 100,
+            commentMaxNum: 50,
             // 向下滚动加载更多评论的最大尝试次数
             scrollAndCheckMaxNum: 10,
             // 每次滚动检查评论的间隔(单位：毫秒)
