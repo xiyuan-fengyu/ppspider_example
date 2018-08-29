@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "mysql": "^2.16.0",
-    "ppspider": "0.1.17",
+    "ppspider": "0.1.17-next.1535524257275",
     "ssh2": "^0.6.1"
   },
   "devDependencies": {
