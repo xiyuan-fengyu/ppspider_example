@@ -29,7 +29,7 @@ export const config = {
             devtools: false
         },
         logger: {
-            level: "info"
+            level: "debug"
         },
         workplace: __dirname + "/workplace",
         github: {

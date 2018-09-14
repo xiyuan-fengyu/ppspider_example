@@ -1,13 +1,4 @@
-import {
-    AddToQueue,
-    AddToQueueStrategyIfError,
-    FromQueue,
-    Job,
-    logger,
-    OnStart,
-    PuppeteerUtil,
-    PuppeteerWorkerFactory
-} from "ppspider";
+import {AddToQueue, FromQueue, Job, logger, OnStart, PuppeteerUtil, PuppeteerWorkerFactory} from "ppspider";
 import {Page} from "puppeteer";
 import {GithubUser} from "../model/GithubUser";
 import {githubUserDao} from "../dao/GithubUserDao";
@@ -49,8 +40,9 @@ export class GithubSpreadTask {
         parallel: 1,
         exeInterval: 10000
     })
-    @AddToQueue([q_user, q_repositories, q_roam], AddToQueueStrategyIfError.ignore)
+    @AddToQueue([q_user, q_repositories, q_roam])
     async roam(page: Page, job: Job) {
+        logger.debugValid && logger.debug("task url: " + job.url());
         await PuppeteerUtil.defaultViewPort(page);
         await page.setCookie(...config.github.cookies);
         await page.goto(job.url());
@@ -101,8 +93,9 @@ export class GithubSpreadTask {
         parallel: 1,
         exeInterval: 10000
     })
-    @AddToQueue([q_user, q_user_repositories, q_user_stars, q_repositories, q_roam], AddToQueueStrategyIfError.ignore)
+    @AddToQueue([q_user, q_user_repositories, q_user_stars, q_repositories, q_roam])
     async user(page: Page, job: Job) {
+        logger.debugValid && logger.debug("task url: " + job.url());
         await PuppeteerUtil.defaultViewPort(page);
         await PuppeteerUtil.setImgLoad(page, false);
         await page.setCookie(...config.github.cookies);
@@ -128,7 +121,7 @@ export class GithubSpreadTask {
 
         const urls = await this.allUrls(page);
         if (userInfo) {
-            logger.debugValid && logger.debug("userInfo " + JSON.stringify(userInfo, null, 4));
+            logger.debugValid && logger.debug("userInfo", userInfo);
             const githubUser = new GithubUser(userInfo);
             githubUserDao.save(githubUser);
 
@@ -144,14 +137,15 @@ export class GithubSpreadTask {
      * @param {Job} job
      * @returns {Promise<any>}
      */
-    // @FromQueue({
-    //     name: "user_repositories",
-    //     workerFactory: PuppeteerWorkerFactory,
-    //     parallel: 1,
-    //     exeInterval: 10000
-    // })
-    // @AddToQueue([q_user, q_repositories, q_roam], AddToQueueStrategyIfError.ignore)
+    @FromQueue({
+        name: "user_repositories",
+        workerFactory: PuppeteerWorkerFactory,
+        parallel: 1,
+        exeInterval: 10000
+    })
+    @AddToQueue([q_user, q_repositories, q_roam])
     async userRepositories(page: Page, job: Job) {
+        logger.debugValid && logger.debug("task url: " + job.url());
         await PuppeteerUtil.defaultViewPort(page);
         await PuppeteerUtil.setImgLoad(page, false);
         await page.setCookie(...config.github.cookies);
@@ -183,7 +177,7 @@ export class GithubSpreadTask {
 
         const allRepositorieArr = Object.keys(allRepositories);
         if (allRepositorieArr.length) {
-            logger.debugValid && logger.debug("allRepositorieArr " + JSON.stringify(allRepositorieArr, null, 4));
+            logger.debugValid && logger.debug("allRepositorieArr", allRepositorieArr);
             let userId = new RegExp("https://github.com/([^/]+)\\?tab=repositories").exec(job.url())[1];
             await githubUserDao.update({ _id: userId }, { $set: { repositories: allRepositorieArr } });
         }
@@ -196,14 +190,15 @@ export class GithubSpreadTask {
      * @param {Job} job
      * @returns {Promise<any>}
      */
-    // @FromQueue({
-    //     name: "user_stars",
-    //     workerFactory: PuppeteerWorkerFactory,
-    //     parallel: 1,
-    //     exeInterval: 10000
-    // })
-    // @AddToQueue([q_user, q_repositories, q_roam], AddToQueueStrategyIfError.ignore)
+    @FromQueue({
+        name: "user_stars",
+        workerFactory: PuppeteerWorkerFactory,
+        parallel: 1,
+        exeInterval: 10000
+    })
+    @AddToQueue([q_user, q_repositories, q_roam])
     async userStars(page: Page, job: Job) {
+        logger.debugValid && logger.debug("task url: " + job.url());
         await PuppeteerUtil.defaultViewPort(page);
         await PuppeteerUtil.setImgLoad(page, false);
         await page.setCookie(...config.github.cookies);
@@ -235,7 +230,7 @@ export class GithubSpreadTask {
 
         const allStarsArr = Object.keys(allStars);
         if (allStarsArr.length) {
-            logger.debugValid && logger.debug("allStarsArr " + JSON.stringify(allStarsArr, null, 4));
+            logger.debugValid && logger.debug("allStarsArr", allStarsArr);
             let userId = new RegExp("https://github.com/([^/]+)\\?tab=stars").exec(job.url())[1];
             await githubUserDao.update({ _id: userId }, { $set: { stars: allStars } });
         }
@@ -243,7 +238,7 @@ export class GithubSpreadTask {
     }
 
     /**
-     * 抓取一个 repositorie 的信息，包括 id，简述，标签列表，是否包含中文
+     * 抓取一个 repositorie 的信息，包括 id，简述，标签列表，相关计数，是否包含中文
      * 标签列表用于判断是否为 spider 相关
      * 是否包含中文 用于判断后续给用户发送邮件该发送中文还是英文
      * @param {Page} page
@@ -256,8 +251,9 @@ export class GithubSpreadTask {
         parallel: 1,
         exeInterval: 10000
     })
-    @AddToQueue([q_user, q_repositories, q_roam], AddToQueueStrategyIfError.ignore)
+    @AddToQueue([q_user, q_repositories, q_roam])
     async repositorie(page: Page, job: Job) {
+        logger.debugValid && logger.debug("task url: " + job.url());
         await PuppeteerUtil.defaultViewPort(page);
         await PuppeteerUtil.setImgLoad(page, false);
         await page.setCookie(...config.github.cookies);
@@ -332,7 +328,7 @@ export class GithubSpreadTask {
             }));
             repoInfo._id = repoId;
 
-            logger.debugValid && logger.debug("repoInfo " + JSON.stringify(repoInfo, null, 4));
+            logger.debugValid && logger.debug("repoInfo", repoInfo);
 
             const githubRepository = new GithubRepository(repoInfo);
             await githubRepositoryDao.save(githubRepository);
@@ -342,13 +338,38 @@ export class GithubSpreadTask {
 
     private async allUrls(page: Page) {
         const urls = await PuppeteerUtil.links(page, {
-            "special": "^https://github.com/(login|search|join|new|issues|features|business|explore|marketplace|pricing|contact|about|topics|site|articles)([?/].+)?$",
+            "special": `^https://github.com/(${githubSpecialKeywords})([?/].+)?$`,
             "user": "^https://github.com/[^/#?]+$",
             "repositories": "^https://github.com/[^/#?]+/[^/#?]+$",
             "roam": "https://github.com/.*"
         });
-        logger.debugValid && logger.debug("urls " + JSON.stringify(urls, null, 4));
+        delete urls.special;
+        logger.debugValid && logger.debug("urls", urls);
         return urls;
     }
 
 }
+
+const githubSpecialKeywords = `
+topics
+trending
+notifications
+pulls
+login
+search
+join
+new
+issues
+features
+business
+explore
+marketplace
+pricing
+contact
+about
+site
+articles
+`.split("\n")
+    .map(item => item.trim())
+    .filter(item => item)
+    .join("|");
