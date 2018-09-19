@@ -329,11 +329,13 @@ export class GithubSpreadTask {
     private async allUrls(page: Page) {
         const urls = await PuppeteerUtil.links(page, {
             "special": `^https://github.com/(${githubSpecialKeywords})([?/].+)?$`,
+            "drop": "^https://github.com/[^/#?]+/[^/#?]+/.+$",
             "user": "^https://github.com/[^/#?]+$",
             "repositories": "^https://github.com/[^/#?]+/[^/#?]+$",
             "roam": "https://github.com/.*"
         });
         delete urls.special;
+        delete urls.drop;
         logger.debugValid && logger.debug("urls", urls);
         return urls;
     }
