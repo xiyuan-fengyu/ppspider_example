@@ -14,6 +14,8 @@ import {Ssh2Client} from "../util/Ssh2Client";
 import {config} from "../config";
 import * as fs from "fs";
 import {MysqlDao} from "../dao/MysqlDao";
+import {userDao} from "../dao/UserDao";
+import {User} from "../model/User";
 
 export class TestTask {
 
@@ -74,6 +76,13 @@ export class TestTask {
         }).catch(err => {
             logger.error("failed to insert into tb_log");
         });
+
+        // 存储数据到 nedb
+        await userDao.save(new User({
+            name: "Tom",
+            age: 25,
+            gender: "boy"
+        }));
     }
 
 }

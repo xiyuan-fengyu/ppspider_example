@@ -18,6 +18,13 @@
 系统启动后，抓取所有 http 开头的连接，通过 @AddToQueue 添加到 test 队列中  
 @FromQueue 则从 test 队列中获取任务，并交由 printUrl 方法处理    
 
+## src/requestMapping
+演示了 @RequestMapping 声明 HTTP rest 接口，提供远程动态添加任务的能力  
+系统启动后，如下动态添加任务
+```
+curl http://localhost:9000/addJob/test?url=justTestForRequestMapping
+```
+
 ## src/puppeteerUtil
 演示了 PuppeteerUtil 工具类中一些方法的使用方式  
 
@@ -31,7 +38,8 @@
 1. 保存到本地文件中  
 2. 上传到服务器  
 3. 存入 mysql  
-4. @TODO 添加到 mongodb     
+4. @TODO 添加到 mongodb 
+5. 存储到 nedb （类 mongodb 的serverless本地数据库）    
 
 ## src/bilibili  
 爬取B站视频信息和前几页评论（包括全部楼中楼）  
@@ -56,4 +64,8 @@ export const movies =
 src/twitter/config.ts   
 dev.puppeteer.args --proxy-server=ip:port 设置代理  
 dev.twitter.commentMaxNum 一个主题最多抓取多少条评论  
+
+## src/spread
+抓取 github 上对 爬虫感兴趣的用户，向他们发送邮件推荐自己的爬虫框架，
+目前爬取功能已完成，邮件发送未实现，TODO
 
