@@ -1,4 +1,13 @@
-import {AddToQueue, FromQueue, Job, logger, OnStart, PuppeteerUtil, PuppeteerWorkerFactory} from "ppspider";
+import {
+    AddToQueue,
+    FromQueue,
+    Job,
+    logger,
+    mainMessager, MainMessagerEvent,
+    OnStart,
+    PuppeteerUtil,
+    PuppeteerWorkerFactory
+} from "ppspider";
 import {Page} from "puppeteer";
 import {GithubUser} from "../model/GithubUser";
 import {githubUserDao} from "../dao/GithubUserDao";
@@ -24,6 +33,18 @@ const q_roam = {
 
 export class GithubSpreadTask {
 
+    @OnStart({
+        urls: "https://github.com/",
+        workerFactory: PuppeteerWorkerFactory
+    })
+    private async setCookie(page: Page, job: Job) {
+        await PuppeteerUtil.defaultViewPort(page);
+        await PuppeteerUtil.setImgLoad(page, false);
+        await page.setCookie(...config.github.cookies);
+        await page.goto(job.url());
+        mainMessager.emit(MainMessagerEvent.QueueManager_QueueToggle_queueNameRegex_running, ".*", true);
+    }
+
     /**
      * 从 https://github.com/search?o=desc&q=spider&s=stars&type=Repositories 这个地址更容易找到对spider感兴趣的用户
      * @param {Page} page
@@ -32,54 +53,23 @@ export class GithubSpreadTask {
      */
     @OnStart({
         urls: "https://github.com/search?q=spider",
-        workerFactory: PuppeteerWorkerFactory
+        workerFactory: PuppeteerWorkerFactory,
+        running: false
     })
     @FromQueue({
         name: "roam",
         workerFactory: PuppeteerWorkerFactory,
+        running: false,
         parallel: 1,
-        exeInterval: 10000
+        exeInterval: 30000
     })
     @AddToQueue([q_user, q_repositories, q_roam])
     async roam(page: Page, job: Job) {
         logger.debugValid && logger.debug("task url: " + job.url());
         await PuppeteerUtil.defaultViewPort(page);
-        await page.setCookie(...config.github.cookies);
         await page.goto(job.url());
         return await this.allUrls(page);
     }
-
-    // private async checkLogin(page: Page) {
-    //     // 检查是否已经登录
-    //     const signInId = await PuppeteerUtil.specifyIdByJquery(page, "a[href^='/login']");
-    //     if (signInId) {
-    //         // 自动登录
-    //         await page.tap("#" + signInId[0]);
-    //         try {
-    //             await page.waitForNavigation({
-    //                 timeout: 5000
-    //             });
-    //         }
-    //         catch (e) {
-    //             logger.warn(e.stack);
-    //         }
-    //         await page.type("#login_field", config.github.username, {
-    //             delay: 100
-    //         });
-    //         await page.type("#password", config.github.password, {
-    //             delay: 100
-    //         });
-    //         await page.tap("input[type='submit'][name='commit']");
-    //         try {
-    //             await page.waitForNavigation({
-    //                 timeout: 5000
-    //             });
-    //         }
-    //         catch (e) {
-    //             logger.warn(e.stack);
-    //         }
-    //     }
-    // }
 
     /**
      * 尝试抓取用户信息，主要是用户的id，昵称，区域，邮箱，个人主页
@@ -90,14 +80,14 @@ export class GithubSpreadTask {
     @FromQueue({
         name: "user",
         workerFactory: PuppeteerWorkerFactory,
+        running: false,
         parallel: 1,
-        exeInterval: 10000
+        exeInterval: 30000
     })
     @AddToQueue([q_user, q_user_repositories, q_user_stars, q_repositories, q_roam])
     async user(page: Page, job: Job) {
         logger.debugValid && logger.debug("task url: " + job.url());
         await PuppeteerUtil.defaultViewPort(page);
-        await PuppeteerUtil.setImgLoad(page, false);
         await page.setCookie(...config.github.cookies);
         await page.goto(job.url());
         await PuppeteerUtil.addJquery(page);
@@ -140,21 +130,21 @@ export class GithubSpreadTask {
     @FromQueue({
         name: "user_repositories",
         workerFactory: PuppeteerWorkerFactory,
+        running: false,
         parallel: 1,
-        exeInterval: 10000
+        exeInterval: 30000
     })
     @AddToQueue([q_user, q_repositories, q_roam])
     async userRepositories(page: Page, job: Job) {
         logger.debugValid && logger.debug("task url: " + job.url());
         await PuppeteerUtil.defaultViewPort(page);
         await PuppeteerUtil.setImgLoad(page, false);
-        await page.setCookie(...config.github.cookies);
         await page.goto(job.url());
-        await PuppeteerUtil.addJquery(page);
 
         const allRepositories = {};
         const maxPage = config.github.user.repositories.maxPage;
         for (let i = 0; i < maxPage; i++) {
+            await PuppeteerUtil.addJquery(page);
             const repositories = await page.evaluate(() => new Promise(resolve => {
                 const repositories = [];
                 $("#user-repositories-list").find("a[itemprop='name codeRepository']").each((index, element) => {
@@ -169,8 +159,8 @@ export class GithubSpreadTask {
 
             const ids = await PuppeteerUtil.specifyIdByJquery(page, ".paginate-container a:contains('Next')");
             if (ids) {
-                await page.tap(ids[0]);
-                await page.waitForNavigation();
+                const nextHref = await page.evaluate(id => $("#" + id)[0]["href"], ids[0]);
+                await page.goto(nextHref);
             }
             else break;
         }
@@ -193,21 +183,21 @@ export class GithubSpreadTask {
     @FromQueue({
         name: "user_stars",
         workerFactory: PuppeteerWorkerFactory,
+        running: false,
         parallel: 1,
-        exeInterval: 10000
+        exeInterval: 30000
     })
     @AddToQueue([q_user, q_repositories, q_roam])
     async userStars(page: Page, job: Job) {
         logger.debugValid && logger.debug("task url: " + job.url());
         await PuppeteerUtil.defaultViewPort(page);
         await PuppeteerUtil.setImgLoad(page, false);
-        await page.setCookie(...config.github.cookies);
         await page.goto(job.url());
-        await PuppeteerUtil.addJquery(page);
 
         const allStars = {};
         const maxPage = config.github.user.stars.maxPage;
         for (let i = 0; i < maxPage; i++) {
+            await PuppeteerUtil.addJquery(page);
             const stars = await page.evaluate(() => new Promise(resolve => {
                 const stars = [];
                 $("div.position-relative > div").not(".TableObject").find("h3 > a").each((index, element) => {
@@ -222,8 +212,8 @@ export class GithubSpreadTask {
 
             const ids = await PuppeteerUtil.specifyIdByJquery(page, ".paginate-container a:contains('Next')");
             if (ids) {
-                await page.tap(ids[0]);
-                await page.waitForNavigation();
+                const nextHref = await page.evaluate(id => $("#" + id)[0]["href"], ids[0]);
+                await page.goto(nextHref);
             }
             else break;
         }
@@ -232,7 +222,7 @@ export class GithubSpreadTask {
         if (allStarsArr.length) {
             logger.debugValid && logger.debug("allStarsArr", allStarsArr);
             let userId = new RegExp("https://github.com/([^/]+)\\?tab=stars").exec(job.url())[1];
-            await githubUserDao.update({ _id: userId }, { $set: { stars: allStars } });
+            await githubUserDao.update({ _id: userId }, { $set: { stars: allStarsArr } });
         }
         return await this.allUrls(page);
     }
@@ -248,15 +238,15 @@ export class GithubSpreadTask {
     @FromQueue({
         name: "repositories",
         workerFactory: PuppeteerWorkerFactory,
+        running: false,
         parallel: 1,
-        exeInterval: 10000
+        exeInterval: 30000
     })
     @AddToQueue([q_user, q_repositories, q_roam])
     async repositorie(page: Page, job: Job) {
         logger.debugValid && logger.debug("task url: " + job.url());
         await PuppeteerUtil.defaultViewPort(page);
         await PuppeteerUtil.setImgLoad(page, false);
-        await page.setCookie(...config.github.cookies);
         await page.goto(job.url());
         await PuppeteerUtil.addJquery(page);
 
@@ -369,6 +359,9 @@ contact
 about
 site
 articles
+settings
+account
+organizations
 `.split("\n")
     .map(item => item.trim())
     .filter(item => item)

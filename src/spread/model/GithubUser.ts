@@ -1,4 +1,4 @@
-import {NedbModel} from "../nedb/NedbModel";
+import {NedbModel} from "ppspider";
 
 export class GithubUser extends NedbModel {
 

@@ -12,8 +12,8 @@ import {
 import {Page} from "puppeteer";
 import {Ssh2Client} from "../util/Ssh2Client";
 import {config} from "../config";
-import {MysqlClient} from "../util/MysqlClient";
 import * as fs from "fs";
+import {MysqlDao} from "../dao/MysqlDao";
 
 export class TestTask {
 
@@ -21,7 +21,7 @@ export class TestTask {
     private ssh2Client = new Ssh2Client(config.remote);
 
     @Transient() // 不参与序列化
-    private mysqlClient = new MysqlClient(config.mysql);
+    private mysqlDao = new MysqlDao(config.mysql);
 
     @OnStart({
         urls: "http://www.baidu.com",
@@ -66,9 +66,13 @@ export class TestTask {
         engine=InnoDB charset=latin1
         ;
          */
-        await this.mysqlClient.insert("tb_log", {
+        await this.mysqlDao.insert("tb_log", {
             content: "test",
             time: DateUtil.toStr()
+        }).then(() => {
+            logger.debugValid && logger.debug("insert into tb_log successfully");
+        }).catch(err => {
+            logger.error("failed to insert into tb_log");
         });
     }
 
