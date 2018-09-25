@@ -68,4 +68,10 @@ dev.twitter.commentMaxNum 一个主题最多抓取多少条评论
 ## src/spread
 抓取 github 上对 爬虫感兴趣的用户，向他们发送邮件推荐自己的爬虫框架，
 目前爬取功能已完成，邮件发送未实现，TODO
-
+运行前需要在 lib/spread 目录下创建一个 github.cookie.local.txt 文件用于
+提供github登陆之后的cookie信息（在chrome浏览器中登录github之后，从devTools的
+Network 面板中查看一个请求，获取cookie信息）  
+github.cookie.local.txt文件内容大致如下  
+```
+has_recent_activity=1; _octo=GH1.1.123.123; _ga=GA1.2.123.123; _gat=1; tz=Asia%2FBeiJing; user_session=sda-m1oGH0diAKQ_h0a; __Host-user_session_same_site=asd-asd; logged_in=yes; dotcom_user=asd; _gh_sess=asd%3D--asd
+```
