@@ -1,4 +1,9 @@
 # ppspider example
+安装依赖
+```
+set PUPPETEER_DOWNLOAD_HOST=https://npm.taobao.org/mirrors/
+npm install
+```
 
 ## src/quickstart
 演示了 @OnStart 装饰器的作用  
