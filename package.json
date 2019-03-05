@@ -17,6 +17,7 @@
     "@types/node": "^11.9.4",
     "@types/puppeteer": "^1.12.1",
     "@types/express": "^4.16.1",
-    "@types/ssh2": "^0.5.35"
+    "@types/ssh2": "^0.5.35",
+    "@types/nedb": "^1.8.7"
   }
 }
