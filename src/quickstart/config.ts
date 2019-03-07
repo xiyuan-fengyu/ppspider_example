@@ -12,4 +12,4 @@ export const config = {
             ]
         },
     }
-}.dev;
+}[(process.argv.find(item => item.startsWith("-env=")) || "-env=dev").substring(5)];

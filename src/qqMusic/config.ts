@@ -21,4 +21,4 @@ export const config = {
         },
         commentPages: 10
     }
-}.dev;
+}[(process.argv.find(item => item.startsWith("-env=")) || "-env=dev").substring(5)];
