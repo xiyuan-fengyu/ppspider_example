@@ -48,11 +48,19 @@ export class MysqlDao {
         });
     }
 
-    insert(table: string, data: any) {
+    insert(table: string, data: any, ignoreDup: boolean = true) {
         return this.execute((connection, actionResolve, actionReject) => {
             connection.query("INSERT INTO " + table + " SET ?", data, (err, results, fields) => {
                 if (err) {
-                    actionReject(err);
+                    if (ignoreDup) {
+                        actionResolve({
+                            affectedRows: 0,
+                            changedRows: 0
+                        });
+                    }
+                    else {
+                        actionReject(err);
+                    }
                 }
                 else {
                     actionResolve(results);
