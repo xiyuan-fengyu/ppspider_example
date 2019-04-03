@@ -1,17 +1,16 @@
 import {
     AddToQueue,
     appInfo,
-    Bean,
     DataUi,
     DataUiRequest,
     DateUtil,
-    DefaultJob, FileUtil,
+    DefaultJob,
+    FileUtil,
     FromQueue,
     getBean,
     Job,
     Launcher,
     NoFilter,
-    PuppeteerUtil,
     PuppeteerWorkerFactory
 } from "ppspider";
 import {Page} from "puppeteer";
@@ -24,7 +23,7 @@ import {Page} from "puppeteer";
     display: block;
     overflow-y: auto;
     height: calc(100vh - 90px);
-    margin-top: 18px;
+    margin-top: 12px;
 }
 
 #screenshotViewer img {
@@ -48,7 +47,7 @@ import {Page} from "puppeteer";
                     <label for="fullPage">截取范围</label>
                     <select [(ngModel)]="fullPage" id="fullPage" name="fullPage" class="form-control">
                         <option [ngValue]="true">整个网页</option>
-                        <option [ngValue]="false">当前屏幕</option>
+                        <option [ngValue]="false">第一屏幕</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -59,11 +58,19 @@ import {Page} from "puppeteer";
                     </select>
                 </div>
                 <button (click)="doScreenshot()" [disabled]="url ? null : true" class="btn btn-primary">Submit</button>
+                <button *ngIf="screenshotResult && screenshotResult.imgs.length == screenshotResult.total" (click)="doExport()" class="btn btn-primary" style="margin-left: 32px">Export</button>
             </form>
         </div>
         <div class="col-sm-9">
+            <div *ngIf="screenshotResult" class="progress">
+                <div class="progress-bar progress-bar-info" role="progressbar" [attr.aria-valuenow]="progress" aria-valuemin="0" aria-valuemax="100" [style.width.%]="progress">
+                    {{progress}}%
+                </div>
+            </div>
             <div id="screenshotViewer">
-                <img *ngIf="screenshotResult" [src]="screenshotResult">
+                <ng-container *ngIf="screenshotResult">
+                    <img *ngFor="let item of screenshotResult.imgs" [src]="item">
+                </ng-container>
             </div>
         </div>
     </div>
@@ -78,7 +85,9 @@ export class ScreenshotHelperUi {
 
     saveType: string = "png";
 
-    screenshotResult: string;
+    screenshotResult;
+
+    progress = 0;
 
     screenshot(url: string, fullPage?: boolean, saveType?: string) {
         // just a stub
@@ -90,13 +99,57 @@ export class ScreenshotHelperUi {
         });
     }
 
-    onScreenshotRes(job: any) {
-        this.screenshotResult = job._datas.savePath;
+    onScreenshotRes(screenshotRes: any) {
+        this.progress = parseInt("" + screenshotRes.imgs.length / screenshotRes.total * 100);
+        this.screenshotResult = screenshotRes;
+    }
+
+    doExport() {
+        const imgLoadPs = [];
+        for (let imgSrc of this.screenshotResult.imgs) {
+            imgLoadPs.push(new Promise(resolve => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.src = imgSrc;
+            }));
+        }
+        Promise.all(imgLoadPs).then(imgs => {
+            const canvasArr = [];
+            const ctxArr = [];
+            const mergeMax = 25; // 最多将 25 张图片合成一个，再大一点就会报错
+            for (let i = 0, len = imgs.length;  i < len; i++) {
+                if (i % mergeMax == 0) {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = 1920;
+                    canvas.height = 1080 * Math.min(mergeMax, len - i);
+                    canvasArr.push(canvas);
+
+                    const ctx = canvas.getContext("2d");
+                    ctxArr.push(ctx);
+                }
+                ctxArr[ctxArr.length - 1].drawImage(imgs[i], 0, 1080 * (i % mergeMax), 1920, 1080);
+                if (i % mergeMax == (mergeMax - 1) || i == len - 1) {
+                    canvasArr[canvasArr.length - 1].toBlob(blob => this.downloadBlob(blob,
+                        this.screenshotResult.id + "_" + (i / mergeMax).toFixed() + "."  + this.screenshotResult.saveType));
+                }
+            }
+        });
+    }
+
+    downloadBlob(blob: Blob, file: string) {
+        const url= (window.URL || window["webkitURL"]).createObjectURL(blob);
+        const a = document.createElement("a") as any;
+        document.body.appendChild(a);
+        a.style = "display: none";
+        a.href = url;
+        a.download = file;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
     }
 
 }
 
-@Bean()
 class ScreenshotTask {
 
     @DataUiRequest(ScreenshotHelperUi.prototype.screenshot)
@@ -115,20 +168,61 @@ class ScreenshotTask {
 
     @FromQueue({
         name: "screenshot",
-        workerFactory: PuppeteerWorkerFactory
+        workerFactory: PuppeteerWorkerFactory,
+        timeout: -1
     })
     async screenshot(page: Page, job: Job) {
-        await PuppeteerUtil.defaultViewPort(page);
-        await page.goto(job.url());
-        const saveName = DateUtil.toStr(new Date(), "YYYYMMDD_HHmmss") + "." + job.datas().saveType;
-        FileUtil.mkdirs(appInfo.workplace + "/screenshot");
-        await page.screenshot({
-            path: appInfo.workplace + "/screenshot/" + saveName,
-            type: job.datas().saveType,
-            fullPage: job.datas().fullPage
+        await page.setViewport({
+            width: 1920,
+            height: 1080
         });
-        job.datas().savePath = "/screenshot/" + saveName;
-        getBean(ScreenshotHelperUi).onScreenshotRes(job);
+        await page.goto(job.url());
+
+        const maxH = await page.evaluate(() => document.body.offsetHeight);
+        await page.setViewport({
+            width: 1920,
+            height: 1080 * 1000
+        });
+
+        FileUtil.mkdirs(appInfo.workplace + "/screenshot");
+
+        let pageNum;
+        if (job.datas().fullPage) {
+            pageNum = parseInt("" + (maxH - 1) / 1080) + 1;
+        }
+        else {
+            pageNum = 1;
+        }
+
+        const saveType = job.datas().saveType;
+        const screenshotRes = {
+            id: job.id(),
+            imgs: [],
+            saveType: saveType,
+            total: pageNum
+        };
+        for (let i = 0; i < pageNum; i++) {
+            if (i > 0) {
+                await page.evaluate(y => new Promise(resolve => {
+                    document.body.style.marginTop = "-" + y + "px";
+                    setTimeout(resolve, 1000 / 60);
+                }), 1080 * i);
+            }
+            const time = DateUtil.toStr(new Date(), "YYYYMMDD_HHmmss");
+            const savePath = "/screenshot/" + time + "_" + i + "." + saveType;
+            await page.screenshot({
+                path: appInfo.workplace + savePath,
+                type: job.datas().saveType,
+                clip: {
+                    x: 0,
+                    y: 0,
+                    width: 1920,
+                    height: 1080
+                }
+            });
+            screenshotRes.imgs.push(savePath);
+            getBean(ScreenshotHelperUi).onScreenshotRes(screenshotRes);
+        }
     }
 
 }
