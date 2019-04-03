@@ -1,22 +1,22 @@
-import {Launcher, logger, PuppeteerWorkerFactory} from "ppspider";
-import {TestTask} from "./tasks/TestTask";
-import {config} from "./config";
+import {Job, Launcher, logger, NoneWorkerFactory, OnStart} from "ppspider";
 
-// 打印 当前puppeteer版本对应的chromium的下载地址和本地保存目录
-import * as puppeteer from "puppeteer";
-const chromiumInfo = (puppeteer as any).createBrowserFetcher({})
-    .revisionInfo(require("puppeteer/package.json").puppeteer.chromium_revision);
-logger.debug("", "download url: " + chromiumInfo.url, "chromium path: " + chromiumInfo.executablePath.replace(/\\/g, '/'));
+class TestTask {
+
+    @OnStart({
+        urls: "",
+        workerFactory: NoneWorkerFactory
+    })
+    async onStart(useless: any, job: Job) {
+        logger.debug("this job will execute after ppspider startup", job);
+    }
+
+}
 
 @Launcher({
     workplace: __dirname + "/workplace",
     tasks: [
         TestTask
     ],
-    workerFactorys: [
-        new PuppeteerWorkerFactory(config.puppeteer)
-    ]
+    workerFactorys: []
 })
-class App {
-
-}
+class App {}

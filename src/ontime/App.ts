@@ -1,18 +1,23 @@
-import {Launcher, PuppeteerWorkerFactory} from "ppspider";
-import {TestTask} from "./tasks/TestTask";
+import {Job, Launcher, logger, NoneWorkerFactory, OnTime} from "ppspider";
+
+class TestTask {
+
+    @OnTime({
+        urls: "",
+        cron: "*/5 * * * * *",
+        workerFactory: NoneWorkerFactory
+    })
+    async onTime(useless: any, job: Job) {
+        logger.debug("this job will execute every 5 seconds", job);
+    }
+
+}
 
 @Launcher({
     workplace: __dirname + "/workplace",
     tasks: [
         TestTask
     ],
-    workerFactorys: [
-        // 这个例子中没有用到 puppeteer, 所以不用注入 PuppeteerWorkerFactory 实例
-        // new PuppeteerWorkerFactory({
-        //     headless: false
-        // })
-    ]
+    workerFactorys: []
 })
-class App {
-
-}
+class App {}
