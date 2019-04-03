@@ -21,18 +21,20 @@ import {Page} from "puppeteer";
     // language=CSS
     style: `
 #screenshotViewer {
-    display: flex;
+    display: block;
+    overflow-y: auto;
     height: calc(100vh - 90px);
     margin-top: 18px;
-    align-items: center;
 }
 
 #screenshotViewer img {
+    display: block;
+    position: relative;
     max-width: 100%;
-    max-height: 100%;
+    margin: 0 auto;
 }
     `,
-    // language=Angular
+    // language=Angular2HTML
     template: `
 <div class="container-fluid" style="margin-top: 12px">
     <div class="row">
