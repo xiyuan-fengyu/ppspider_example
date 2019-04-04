@@ -10,10 +10,20 @@ import {
     getBean,
     Job,
     Launcher,
-    NoFilter,
+    NoFilter, PuppeteerUtil,
     PuppeteerWorkerFactory
 } from "ppspider";
 import {Page} from "puppeteer";
+
+declare const CodeMirror: any;
+
+type ScreenshotConfig = {
+    url: string,
+    fullPage?: boolean,
+    preScroll?: boolean,
+    evaluateJs?: string,
+    saveType?: "png" | "jpeg"
+}
 
 @DataUi({
     label: "网页截图工具",
@@ -50,6 +60,15 @@ import {Page} from "puppeteer";
                         <option [ngValue]="false">第一屏幕</option>
                     </select>
                 </div>
+                <div class="checkbox">
+                    <label>
+                        <input [(ngModel)]="preScroll" name="preScroll" type="checkbox"> 预先滚动一遍
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>截图前执行Js脚本</label>
+                    <textarea #evaluateJsTA [attr.id]="initEvaluateJsTA(evaluateJsTA)" class="form-control"></textarea>
+                </div>
                 <div class="form-group">
                     <label for="saveType">保存格式</label>
                     <select [(ngModel)]="saveType" id="saveType" name="saveType" class="form-control">
@@ -57,7 +76,7 @@ import {Page} from "puppeteer";
                         <option [ngValue]="'jpeg'">jpeg</option>
                     </select>
                 </div>
-                <button (click)="doScreenshot()" [disabled]="url ? null : true" class="btn btn-primary">Submit</button>
+                <button (click)="doScreenshot()" [disabled]="url && evaluateJs !== 'ERROR' ? null : true" class="btn btn-primary">Submit</button>
                 <button *ngIf="screenshotResult && screenshotResult.imgs.length == screenshotResult.total" (click)="doExport()" class="btn btn-primary" style="margin-left: 32px">Export</button>
             </form>
         </div>
@@ -79,9 +98,20 @@ import {Page} from "puppeteer";
 })
 export class ScreenshotHelperUi {
 
+    // language=JavaScript
+    readonly defaultEvaluateJs =
+`(() => {
+
+})
+`;
+
     url: string;
 
     fullPage: boolean = true;
+
+    preScroll: boolean = false;
+
+    evaluateJs: string = null;
 
     saveType: string = "png";
 
@@ -89,13 +119,56 @@ export class ScreenshotHelperUi {
 
     progress = 0;
 
-    screenshot(url: string, fullPage?: boolean, saveType?: string) {
+    initEvaluateJsTA(evaluateJsTA) {
+        if (!evaluateJsTA.id) {
+            evaluateJsTA.id = "evaluateJs";
+            const editor = CodeMirror.fromTextArea(evaluateJsTA, {
+                matchBrackets: true,
+                autoCloseBrackets: true,
+                mode: "application/javascript",
+                lineWrapping: true,
+                lineNumbers: true,
+                lineHeight: "20px"
+            });
+            editor.on('change', (cm, change) => {
+                editor.display.wrapper.style.border = "1px solid #e6e6e6";
+                const value = cm.getValue();
+                if (value === "") {
+                    this.evaluateJs = null;
+                }
+                else {
+                    try {
+                        const fun = eval(value);
+                        if (typeof fun === "function") {
+                            this.evaluateJs = value;
+                            return;
+                        }
+                    }
+                    catch (e) {
+                    }
+                    this.evaluateJs = "ERROR";
+                    editor.display.wrapper.style.border = "1px solid #ff490d";
+                }
+            });
+            editor.setValue(this.defaultEvaluateJs);
+            editor.refresh();
+        }
+        return evaluateJsTA.id;
+    }
+
+    screenshot(params: ScreenshotConfig) {
         // just a stub
         return null;
     }
 
     doScreenshot() {
-        this.screenshot(this.url, this.fullPage, this.saveType).then(res => {
+        this.screenshot({
+            url: this.url,
+            fullPage: this.fullPage,
+            preScroll: this.preScroll,
+            evaluateJs: this.evaluateJs,
+            saveType: this.saveType
+        } as any).then(res => {
         });
     }
 
@@ -114,23 +187,33 @@ export class ScreenshotHelperUi {
             }));
         }
         Promise.all(imgLoadPs).then(imgs => {
-            const canvasArr = [];
-            const ctxArr = [];
             const mergeMax = 25; // 最多将 25 张图片合成一个，再大一点就会报错
-            for (let i = 0, len = imgs.length;  i < len; i++) {
-                if (i % mergeMax == 0) {
-                    const canvas = document.createElement("canvas");
-                    canvas.width = 1920;
-                    canvas.height = 1080 * Math.min(mergeMax, len - i);
-                    canvasArr.push(canvas);
+            const imgsLen = imgs.length;
+            let fromI = 0;
+            let toI = Math.min(mergeMax, imgsLen);
+            while (toI <= imgsLen) {
+                let height = (toI - fromI - 1) * 1080 + imgs[toI - 1].height;
 
-                    const ctx = canvas.getContext("2d");
-                    ctxArr.push(ctx);
+                const canvas = document.createElement("canvas");
+                canvas.width = 1920;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+
+                for (let i = fromI; i < toI; i++) {
+                    const img = imgs[i];
+                    ctx.drawImage(img, 0, 1080 * (i - fromI), 1920, img.height);
                 }
-                ctxArr[ctxArr.length - 1].drawImage(imgs[i], 0, 1080 * (i % mergeMax), 1920, 1080);
-                if (i % mergeMax == (mergeMax - 1) || i == len - 1) {
-                    canvasArr[canvasArr.length - 1].toBlob(blob => this.downloadBlob(blob,
-                        this.screenshotResult.id + "_" + (i / mergeMax).toFixed() + "."  + this.screenshotResult.saveType));
+
+                const curSaveI = (fromI / mergeMax).toFixed();
+                canvas.toBlob(blob => this.downloadBlob(blob,
+                    this.screenshotResult.id + "_" + curSaveI + "."  + this.screenshotResult.saveType));
+
+                if (toI == imgsLen) {
+                    break;
+                }
+                else {
+                    fromI = toI;
+                    toI = Math.min(toI + mergeMax, imgsLen);
                 }
             }
         });
@@ -148,6 +231,10 @@ export class ScreenshotHelperUi {
         document.body.removeChild(a);
     }
 
+    onError(msg: string) {
+        alert("页面打开失败：" + msg);
+    }
+
 }
 
 class ScreenshotTask {
@@ -157,12 +244,15 @@ class ScreenshotTask {
         name: "screenshot",
         filterType: NoFilter
     })
-    async addScreenshotJob(url: string, fullPage?: boolean, saveType?: "png" | "jpeg") {
-        const job = new DefaultJob(url);
-        job.datas({
-            fullPage: !!fullPage,
-            saveType: saveType || "png"
-        });
+    async addScreenshotJob(params: ScreenshotConfig) {
+        const job = new DefaultJob(params.url);
+        const jobData = {
+            _: {
+                maxTry: 1
+            }
+        };
+        Object.assign(jobData, params);
+        job.datas(jobData);
         return job;
     }
 
@@ -172,57 +262,92 @@ class ScreenshotTask {
         timeout: -1
     })
     async screenshot(page: Page, job: Job) {
+        FileUtil.mkdirs(appInfo.workplace + "/screenshot");
+
+        const jobData = job.datas() as ScreenshotConfig;
+        const screenshotRes = {
+            id: job.id(),
+            imgs: [],
+            saveType: jobData.saveType,
+            total: 1
+        };
+        getBean(ScreenshotHelperUi).onScreenshotRes(screenshotRes);
+
         await page.setViewport({
             width: 1920,
             height: 1080
         });
-        await page.goto(job.url());
+        try {
+            await page.goto(job.url(), { waitUntil: 'networkidle0' });
+        }
+        catch (e) {
+            getBean(ScreenshotHelperUi).onError(e.message);
+            throw e;
+        }
+        const maxH = await page.evaluate(() => document.documentElement.scrollHeight);
 
-        const maxH = await page.evaluate(() => document.body.offsetHeight);
-        await page.setViewport({
-            width: 1920,
-            height: 1080 * 1000
-        });
+        if (jobData.preScroll) {
+            // 预先滚动一遍，加载数据
+            await PuppeteerUtil.scrollToBottom(page, -1, 60, 108);
+            // 滚动到顶部
+            await page.evaluate(() => window.scrollTo(0, 0));
+        }
 
-        FileUtil.mkdirs(appInfo.workplace + "/screenshot");
+        if (jobData.evaluateJs) {
+            // 执行脚本
+            await PuppeteerUtil.addJquery(page);
+            const fun = eval(jobData.evaluateJs);
+            await page.evaluate(fun);
+        }
 
         let pageNum;
-        if (job.datas().fullPage) {
+        if (jobData.fullPage) {
             pageNum = parseInt("" + (maxH - 1) / 1080) + 1;
         }
         else {
             pageNum = 1;
         }
+        screenshotRes.total = pageNum;
 
-        const saveType = job.datas().saveType;
-        const screenshotRes = {
-            id: job.id(),
-            imgs: [],
-            saveType: saveType,
-            total: pageNum
-        };
+        // 记录初始信息
+        const oldInfo = await page.evaluate(() => {
+            const oldInfo = {
+                overflowY: document.documentElement.style.overflowY,
+                transform: document.documentElement.style.transform
+            };
+            document.documentElement.style.overflowY = "hidden";
+            return oldInfo;
+        });
+
         for (let i = 0; i < pageNum; i++) {
             if (i > 0) {
                 await page.evaluate(y => new Promise(resolve => {
-                    document.body.style.marginTop = "-" + y + "px";
+                    document.documentElement.style.transform = `translate(0, -${y}px)`;
                     setTimeout(resolve, 1000 / 60);
                 }), 1080 * i);
             }
             const time = DateUtil.toStr(new Date(), "YYYYMMDD_HHmmss");
-            const savePath = "/screenshot/" + time + "_" + i + "." + saveType;
+            const savePath = "/screenshot/" + time + "_" + i + "." + jobData.saveType;
             await page.screenshot({
                 path: appInfo.workplace + savePath,
-                type: job.datas().saveType,
+                type: jobData.saveType,
                 clip: {
                     x: 0,
                     y: 0,
                     width: 1920,
-                    height: 1080
+                    height: Math.min(1080, maxH - 1080 * i)
                 }
             });
+
             screenshotRes.imgs.push(savePath);
             getBean(ScreenshotHelperUi).onScreenshotRes(screenshotRes);
         }
+
+        // 恢复初始信息
+        await page.evaluate((oldInfo) => {
+            document.documentElement.style.overflowY = oldInfo.overflowY;
+            document.documentElement.style.transform = oldInfo.transform;
+        }, oldInfo);
     }
 
 }
@@ -238,7 +363,7 @@ class ScreenshotTask {
     workerFactorys: [
         new PuppeteerWorkerFactory({
             headless: false,
-            devtools: true
+            devtools: false
         })
     ],
     webUiPort: 9000

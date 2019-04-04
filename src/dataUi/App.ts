@@ -20,6 +20,7 @@ declare const CodeMirror: any;
 @DataUi({
     label: "动态任务(DataUi 演示)",
     encapsulation: ViewEncapsulation.None,
+    // language=CSS
     style: `
 #dynamicJobUi .CodeMirror {
     height: auto;
@@ -35,6 +36,7 @@ declare const CodeMirror: any;
     margin-top: 18px;
 }
     `,
+    // language=Angular2HTML
     template: `
 <div id="dynamicJobUi" class="container-fluid" style="margin-top: 12px">
     <div class="row">
@@ -99,6 +101,7 @@ declare const CodeMirror: any;
 })
 class DynamicJobUi {
 
+    // language=JavaScript
     readonly defaultEvaluateJs =
 `(() => {
     const res = {
@@ -139,6 +142,7 @@ class DynamicJobUi {
             // readOnly: "nocursor"
         });
         evaluateJsInput.on('change', (cm, change) => {
+            evaluateJsInput.display.wrapper.style.border = "1px solid #e6e6e6";
             const value = cm.getValue();
             try {
                 const fun = eval(value);
@@ -150,6 +154,7 @@ class DynamicJobUi {
             catch (e) {
             }
             this.evaluateJs = null;
+            evaluateJsInput.display.wrapper.style.border = "1px solid #ff490d";
         });
     }
 
