@@ -66,7 +66,7 @@ type ScreenshotConfig = {
                     </label>
                 </div>
                 <div class="form-group">
-                    <label>截图前执行Js脚本</label>
+                    <label>截图前执行Js脚本(可使用jQuery)</label>
                     <textarea #evaluateJsTA [attr.id]="initEvaluateJsTA(evaluateJsTA)" class="form-control"></textarea>
                 </div>
                 <div class="form-group">
