@@ -10,7 +10,7 @@ import {
     getBean,
     Job,
     Launcher,
-    NoFilter, PuppeteerUtil,
+    NoFilter, PromiseUtil, PuppeteerUtil,
     PuppeteerWorkerFactory
 } from "ppspider";
 import {Page} from "puppeteer";
@@ -284,7 +284,6 @@ class ScreenshotTask {
             getBean(ScreenshotHelperUi).onError(e.message);
             throw e;
         }
-        const maxH = await page.evaluate(() => document.documentElement.scrollHeight);
 
         if (jobData.preScroll) {
             // 预先滚动一遍，加载数据
@@ -300,6 +299,8 @@ class ScreenshotTask {
             await page.evaluate(fun);
         }
 
+        const maxH = await page.evaluate(() => document.documentElement.scrollHeight);
+
         let pageNum;
         if (jobData.fullPage) {
             pageNum = parseInt("" + (maxH - 1) / 1080) + 1;
@@ -309,14 +310,14 @@ class ScreenshotTask {
         }
         screenshotRes.total = pageNum;
 
-        // 记录初始信息
-        const oldInfo = await page.evaluate(() => {
-            const oldInfo = {
-                overflowY: document.documentElement.style.overflowY,
-                transform: document.documentElement.style.transform
-            };
-            document.documentElement.style.overflowY = "hidden";
-            return oldInfo;
+        // 设置 ViewPort，隐藏滚动条
+        await page.setViewport({
+            width: 1920,
+            height: 1080 * 1000
+        });
+        await page.evaluate(() => {
+            document.documentElement.style.overflowY = "visible";
+            document.body.style.overflowY = "visible";
         });
 
         for (let i = 0; i < pageNum; i++) {
@@ -342,12 +343,6 @@ class ScreenshotTask {
             screenshotRes.imgs.push(savePath);
             getBean(ScreenshotHelperUi).onScreenshotRes(screenshotRes);
         }
-
-        // 恢复初始信息
-        await page.evaluate((oldInfo) => {
-            document.documentElement.style.overflowY = oldInfo.overflowY;
-            document.documentElement.style.transform = oldInfo.transform;
-        }, oldInfo);
     }
 
 }
