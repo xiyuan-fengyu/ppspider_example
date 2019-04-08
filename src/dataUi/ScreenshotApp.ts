@@ -9,11 +9,15 @@ import {
     FromQueue,
     getBean,
     Job,
+    JobStatus,
     Launcher,
-    NoFilter, PromiseUtil, PuppeteerUtil,
+    NedbDao,
+    NoFilter,
+    PuppeteerUtil,
     PuppeteerWorkerFactory
 } from "ppspider";
 import {Page} from "puppeteer";
+import * as fs from "fs";
 
 declare const CodeMirror: any;
 
@@ -28,72 +32,107 @@ type ScreenshotConfig = {
 @DataUi({
     label: "网页截图工具",
     // language=CSS
-    style: `
-#screenshotViewer {
-    display: block;
-    overflow-y: auto;
-    height: calc(100vh - 90px);
-    margin-top: 12px;
-}
+    style: `  
+    #screenshotViewer {
+        display: block;
+        overflow-y: auto;
+        height: calc(100vh - 90px);
+        margin-top: 12px;
+    }
 
-#screenshotViewer img {
-    display: block;
-    position: relative;
-    max-width: 100%;
-    margin: 0 auto;
-}
-    `,
+    #screenshotViewer img {
+        display: block;
+        position: relative;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+
+    .screenshotHistories {
+        max-height: 150px;
+        overflow-y: auto;
+        cursor: pointer;
+        word-break: break-all;
+    }
+
+    .deleteScreenshotHis {
+        position: absolute;
+        top: 4px;
+        right: 6px;
+        color: #cccccc;
+    }
+
+    .deleteScreenshotHis:hover {
+        color: #ff6356;
+    }
+
+    .deleteScreenshotHis, .deleteScreenshotHis:active, .deleteScreenshotHis:focus {
+        outline: none;
+    }      `,
     // language=Angular2HTML
     template: `
-<div class="container-fluid" style="margin-top: 12px">
-    <div class="row">
-        <div class="col-sm-3">
-            <form>
-                <div class="form-group">
-                    <label for="url">Url</label>
-                    <input [(ngModel)]="url" id="url" name="url" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label for="fullPage">截取范围</label>
-                    <select [(ngModel)]="fullPage" id="fullPage" name="fullPage" class="form-control">
-                        <option [ngValue]="true">整个网页</option>
-                        <option [ngValue]="false">第一屏幕</option>
-                    </select>
-                </div>
-                <div class="checkbox">
-                    <label>
-                        <input [(ngModel)]="preScroll" name="preScroll" type="checkbox"> 预先滚动一遍
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label>截图前执行Js脚本(可使用jQuery)</label>
-                    <textarea #evaluateJsTA [attr.id]="initEvaluateJsTA(evaluateJsTA)" class="form-control"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="saveType">保存格式</label>
-                    <select [(ngModel)]="saveType" id="saveType" name="saveType" class="form-control">
-                        <option [ngValue]="'png'">png</option>
-                        <option [ngValue]="'jpeg'">jpeg</option>
-                    </select>
-                </div>
-                <button (click)="doScreenshot()" [disabled]="url && evaluateJs !== 'ERROR' ? null : true" class="btn btn-primary">Submit</button>
-                <button *ngIf="screenshotResult && screenshotResult.imgs.length == screenshotResult.total" (click)="doExport()" class="btn btn-primary" style="margin-left: 32px">Export</button>
-            </form>
-        </div>
-        <div class="col-sm-9">
-            <div *ngIf="screenshotResult" class="progress">
-                <div class="progress-bar progress-bar-info" role="progressbar" [attr.aria-valuenow]="progress" aria-valuemin="0" aria-valuemax="100" [style.width.%]="progress">
-                    {{progress}}%
-                </div>
+    <div class="container-fluid" style="margin-top: 8px">
+        <div class="row">
+            <div class="col-sm-3">
+                <form>
+                    <div class="form-group">
+                        <label for="url">Url</label>
+                        <input [(ngModel)]="url" id="url" name="url" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="fullPage">截取范围</label>
+                        <select [(ngModel)]="fullPage" id="fullPage" name="fullPage" class="form-control">
+                            <option [ngValue]="true">整个网页</option>
+                            <option [ngValue]="false">第一屏幕</option>
+                        </select>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input [(ngModel)]="preScroll" name="preScroll" type="checkbox"> 预先滚动一遍
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>截图前执行Js脚本(可使用jQuery)</label>
+                        <textarea #evaluateJsTA [attr.id]="initEvaluateJsTA(evaluateJsTA)" class="form-control"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="saveType">保存格式</label>
+                        <select [(ngModel)]="saveType" id="saveType" name="saveType" class="form-control">
+                            <option [ngValue]="'png'">png</option>
+                            <option [ngValue]="'jpeg'">jpeg</option>
+                        </select>
+                    </div>
+                    <button (click)="doScreenshot()" [disabled]="url && evaluateJs !== 'ERROR' ? null : true" class="btn btn-primary">Submit</button>
+                    <button *ngIf="screenshotResult && screenshotResult.imgs.length == screenshotResult.total" (click)="doExport()" class="btn btn-primary" style="margin-left: 32px">Export</button>
+                </form>
+                <form *ngIf="screenshotHistories && screenshotHistories.length" style="margin-top: 4px">
+                    <div class="form-group">
+                        <label>历史记录</label>
+                        <ul class="screenshotHistories list-group">
+                            <li *ngFor="let job of screenshotHistories" (click)="screenshotInfo(job)" class="list-group-item">
+                                <span>{{job._id}}</span><br/>
+                                <a [attr.href]="job.url" target="_blank">{{job.url}}</a>
+                                <button (click)="doDeleteScreenshotHis(job._id)" type="button" class="close deleteScreenshotHis">
+                                    <span aria-hidden="true">×</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </form>
             </div>
-            <div id="screenshotViewer">
-                <ng-container *ngIf="screenshotResult">
-                    <img *ngFor="let item of screenshotResult.imgs" [src]="item">
-                </ng-container>
+            <div class="col-sm-9">
+                <div *ngIf="screenshotResult" class="progress">
+                    <div class="progress-bar progress-bar-info" role="progressbar" [attr.aria-valuenow]="progress" aria-valuemin="0" aria-valuemax="100" [style.width.%]="progress">
+                        {{screenshotResult.imgs.length + ' / ' + screenshotResult.total}}
+                    </div>
+                </div>
+                <div id="screenshotViewer">
+                    <ng-container *ngIf="screenshotResult">
+                        <img *ngFor="let item of screenshotResult.imgs" [src]="item">
+                    </ng-container>
+                </div>
             </div>
         </div>
     </div>
-</div>
     `
 })
 export class ScreenshotHelperUi {
@@ -104,6 +143,8 @@ export class ScreenshotHelperUi {
 
 })
 `;
+
+    evaluateJsEditor: any;
 
     url: string;
 
@@ -117,7 +158,15 @@ export class ScreenshotHelperUi {
 
     screenshotResult;
 
+    private curJobId: string;
+
     progress = 0;
+
+    screenshotHistories: any[];
+
+    ngOnInit() {
+        this.doLoadScreenshotHistory();
+    }
 
     initEvaluateJsTA(evaluateJsTA) {
         if (!evaluateJsTA.id) {
@@ -152,6 +201,7 @@ export class ScreenshotHelperUi {
             });
             editor.setValue(this.defaultEvaluateJs);
             editor.refresh();
+            this.evaluateJsEditor = editor;
         }
         return evaluateJsTA.id;
     }
@@ -159,6 +209,27 @@ export class ScreenshotHelperUi {
     screenshot(params: ScreenshotConfig) {
         // just a stub
         return null;
+    }
+
+    loadScreenshotHistory() {
+        // just a stub
+        return null;
+    }
+
+    loadScreenshotInfo(job) {
+        // just a stub
+        return null;
+    }
+
+    deleteScreenshotHis(jobId: string) {
+        // just a stub
+        return null;
+    }
+
+    doLoadScreenshotHistory() {
+        this.loadScreenshotHistory().then(res => {
+            this.screenshotHistories = res;
+        });
     }
 
     doScreenshot() {
@@ -169,12 +240,36 @@ export class ScreenshotHelperUi {
             evaluateJs: this.evaluateJs,
             saveType: this.saveType
         } as any).then(res => {
+            this.curJobId = res._id;
         });
     }
 
     onScreenshotRes(screenshotRes: any) {
-        this.progress = parseInt("" + screenshotRes.imgs.length / screenshotRes.total * 100);
-        this.screenshotResult = screenshotRes;
+        if (screenshotRes.id == this.curJobId) {
+            this.progress = parseInt("" + screenshotRes.imgs.length / screenshotRes.total * 100);
+            this.screenshotResult = screenshotRes;
+        }
+        this.doLoadScreenshotHistory();
+    }
+
+    screenshotInfo(job) {
+        const data = job.serialize._datas;
+        this.url = data.url;
+        this.fullPage = data.fullPage;
+        this.preScroll = data.preScroll;
+        this.evaluateJsEditor.setValue(data.evaluateJs);
+        this.evaluateJsEditor.refresh();
+
+        this.loadScreenshotInfo(job).then(res => {
+            this.curJobId = res.id;
+            this.onScreenshotRes(res);
+        });
+    }
+
+    doDeleteScreenshotHis(jobId: string) {
+        this.deleteScreenshotHis(jobId).then(res => {
+            this.doLoadScreenshotHistory();
+        });
     }
 
     doExport() {
@@ -239,6 +334,10 @@ export class ScreenshotHelperUi {
 
 class ScreenshotTask {
 
+    /**
+     * 添加截图任务
+     * @param params
+     */
     @DataUiRequest(ScreenshotHelperUi.prototype.screenshot)
     @AddToQueue({
         name: "screenshot",
@@ -256,6 +355,64 @@ class ScreenshotTask {
         return job;
     }
 
+    /**
+     * 加载截图历史记录
+     */
+    @DataUiRequest(ScreenshotHelperUi.prototype.loadScreenshotHistory)
+    async loadScreenshotHistory() {
+        return NedbDao.db("JobDao").findList({
+            queue: "screenshot",
+            status: JobStatus.Success
+        }, null, {
+            createTime: -1
+        });
+    }
+
+    /**
+     * 加载截图历史记录详情
+     */
+    @DataUiRequest(ScreenshotHelperUi.prototype.loadScreenshotInfo)
+    async loadScreenshotInfo(job: any) {
+        const screenshotRes = job.serialize._datas;
+        screenshotRes.id = job._id;
+        screenshotRes.imgs = [];
+        const files = fs.readdirSync(appInfo.workplace + "/screenshot");
+        const fileIndexRegex = /.*_(\d+)\.(png|jpeg)$/;
+        for (let file of files) {
+            if (file.startsWith(screenshotRes.id + "_")) {
+                screenshotRes.imgs.push({
+                    file: "/screenshot/" + file,
+                    index: parseInt(fileIndexRegex.exec(file)[1])
+                });
+            }
+        }
+        screenshotRes.imgs = screenshotRes.imgs.sort((o1, o2) => o1.index - o2.index)
+            .map(item => item.file);
+        screenshotRes.total = screenshotRes.imgs.length;
+        return screenshotRes;
+    }
+
+    /**
+     * 删除截图历史记录
+     */
+    @DataUiRequest(ScreenshotHelperUi.prototype.deleteScreenshotHis)
+    async deleteScreenshotHis(jobId: string) {
+        const files = fs.readdirSync(appInfo.workplace + "/screenshot");
+        for (let file of files) {
+            if (file.startsWith(jobId + "_")) {
+                fs.unlinkSync(appInfo.workplace + "/screenshot/" + file);
+            }
+        }
+        return NedbDao.db("JobDao").remove({
+            _id: jobId
+        }, false);
+    }
+
+    /**
+     * 执行截图任务
+     * @param page
+     * @param job
+     */
     @FromQueue({
         name: "screenshot",
         workerFactory: PuppeteerWorkerFactory,
@@ -299,7 +456,11 @@ class ScreenshotTask {
             await page.evaluate(fun);
         }
 
-        const maxH = await page.evaluate(() => document.documentElement.scrollHeight);
+        const maxH = await page.evaluate(() => {
+            const h = document.documentElement.scrollHeight;
+            document.documentElement.style.height = h + "px";
+            return h;
+        });
 
         let pageNum;
         if (jobData.fullPage) {
@@ -310,14 +471,10 @@ class ScreenshotTask {
         }
         screenshotRes.total = pageNum;
 
-        // 设置 ViewPort，隐藏滚动条
-        await page.setViewport({
-            width: 1920,
-            height: 1080 * 1000
-        });
+        // 隐藏滚动条
         await page.evaluate(() => {
-            document.documentElement.style.overflowY = "visible";
-            document.body.style.overflowY = "visible";
+            document.documentElement.style.overflowY = "hidden";
+            document.body.style.overflowY = "hidden";
         });
 
         for (let i = 0; i < pageNum; i++) {
@@ -327,11 +484,11 @@ class ScreenshotTask {
                     setTimeout(resolve, 1000 / 60);
                 }), 1080 * i);
             }
-            const time = DateUtil.toStr(new Date(), "YYYYMMDD_HHmmss");
-            const savePath = "/screenshot/" + time + "_" + i + "." + jobData.saveType;
+            const savePath = "/screenshot/" + screenshotRes.id + "_" + i + "." + jobData.saveType;
             await page.screenshot({
                 path: appInfo.workplace + savePath,
                 type: jobData.saveType,
+                omitBackground: true,
                 clip: {
                     x: 0,
                     y: 0,
