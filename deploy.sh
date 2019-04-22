@@ -4,7 +4,7 @@ args='
 -env=prod
 '
 
-set PUPPETEER_DOWNLOAD_HOST=https://npm.taobao.org/mirrors/
+export PUPPETEER_DOWNLOAD_HOST=https://npm.taobao.org/mirrors/
 sudo npm install
 
 
@@ -13,6 +13,7 @@ tsc -w false
 
 # 准备 stop.sh 脚本
 echo -e '
+cd $(cd `dirname $0`; pwd)
 if [[ -f "pid" ]]; then
     mainPid=$(cat pid)
     if [[ "$mainPid " != " " ]]; then
@@ -45,6 +46,7 @@ chmod +x stop.sh
 
 # 准备 start.sh 脚本
 echo -e '
+cd $(cd `dirname $0`; pwd)
 ./stop.sh
 nohup node '${appJsPath}' '${args}' 1>>main.log 2>&1 & echo $! > pid
 ' > start.sh
