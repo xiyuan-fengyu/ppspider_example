@@ -4,6 +4,8 @@ args='
 -env=prod
 '
 
+cd $(cd `dirname $0`; pwd)
+
 export PUPPETEER_DOWNLOAD_HOST=https://npm.taobao.org/mirrors/
 sudo npm install
 
