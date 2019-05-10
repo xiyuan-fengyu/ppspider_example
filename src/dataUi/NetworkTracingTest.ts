@@ -9,7 +9,9 @@ import {
     Launcher,
     NedbDao,
     NedbModel,
+    NetworkTracing,
     NoFilter,
+    PageRequests,
     PuppeteerUtil,
     PuppeteerWorkerFactory,
     RequestMapping,
@@ -17,7 +19,6 @@ import {
     ViewEncapsulation
 } from "ppspider";
 import {Page} from "puppeteer";
-import {NetworkTracing, PageRequests} from "ppspider/lib/puppeteer/NetworkTracing";
 import {Request, Response} from "express";
 
 @DataUi({
