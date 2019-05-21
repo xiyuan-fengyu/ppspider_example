@@ -26,8 +26,8 @@ export class QqMusicTask {
     @JobOverride("OnStart_QqMusicTask_song")
     qqSongJobOverride(job: Job) {
         // 重写 job 的key，增强去重的效果
-        const match = job.url().match("https://y.qq.com/n/yqq/song/(.*?)\\.html.*");
-        if (match) job.key(match[1]);
+        const match = job.url.match("https://y.qq.com/n/yqq/song/(.*?)\\.html.*");
+        if (match) job.key = match[1];
     }
 
     @OnStart({
@@ -46,7 +46,7 @@ export class QqMusicTask {
     ])
     async index(page: Page, job: Job): AddToQueueData {
         await PuppeteerUtil.setImgLoad(page, false);
-        await page.goto(job.url());
+        await page.goto(job.url);
         return await PuppeteerUtil.links(page, {
             qq_song: "https://y.qq.com/n/yqq/song/.*",
             qq: "https://y.qq.com/.*"
@@ -63,9 +63,9 @@ export class QqMusicTask {
         queue_qq_song
     ])
     async song(page: Page, job: Job): AddToQueueData {
-        logger.debugValid && logger.debug(job.key() + "    " + job.url());
+        logger.debugValid && logger.debug(job.key + "    " + job.url);
 
-        const songId = job.key();
+        const songId = job.key;
 
         await PuppeteerUtil.setImgLoad(page, false);
 
@@ -99,7 +99,7 @@ export class QqMusicTask {
                 }
             }, 2);
 
-        await page.goto(job.url());
+        await page.goto(job.url);
         // 等待基本信息和第一页的评论抓取完成
         await Promise.all([songRes, albumRes, lyricRes, commentRes]);
 

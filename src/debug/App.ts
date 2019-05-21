@@ -8,7 +8,7 @@ export class TestTask {
         workerFactory: PuppeteerWorkerFactory
     })
     async index(page: Page, job: Job) {
-        await page.goto(job.url());
+        await page.goto(job.url);
         const title = await page.evaluate(() => {
             debugger;
             const title = document.title;

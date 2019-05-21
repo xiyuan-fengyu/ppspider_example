@@ -14,14 +14,14 @@ export class BilibiliTask {
 
     @JobOverride("video")
     overrideVideoJob(job: Job) {
-        const match = job.url().match("/video/av(\\d+).+?([?&]p=(\\d+))?");
+        const match = job.url.match("/video/av(\\d+).+?([?&]p=(\\d+))?");
         if (match) {
             // 获取av id 和分页信息，组合成新的唯一avId，用于过滤
             const avId = match[1];
             const pNum = match[3] || "0";
-            job.key(avId + "_" + pNum);
-            job.datas().id = avId;
-            job.datas().p = pNum;
+            job.key = avId + "_" + pNum;
+            job.datas.id = avId;
+            job.datas.p = pNum;
         }
     }
 
@@ -45,7 +45,7 @@ export class BilibiliTask {
     async roam(page: Page, job: Job): AddToQueueData {
         await PuppeteerUtil.defaultViewPort(page);
         await PuppeteerUtil.setImgLoad(page, false);
-        await page.goto(job.url());
+        await page.goto(job.url);
         await PuppeteerUtil.scrollToBottom(page);
         return await PuppeteerUtil.links(page, {
             video: ".*bilibili.*/video/av.*",
@@ -71,8 +71,8 @@ export class BilibiliTask {
         exeInterval: 5000
     })
     async video(page: Page, job: Job): AddToQueueData {
-        const id = job.datas().id;
-        const p = job.datas().p;
+        const id = job.datas.id;
+        const p = job.datas.p;
         const dataDir = appInfo.workplace + "/data/video/" + id + "/" + p;
 
         await PuppeteerUtil.defaultViewPort(page);
@@ -102,7 +102,7 @@ export class BilibiliTask {
             FileUtil.write(dataDir + "/reply/1.json", JSON.stringify(reply));
         });
 
-        await page.goto(job.url());
+        await page.goto(job.url);
         await PuppeteerUtil.scrollToBottom(page);
         await countResWait;
         await tagsResWait;

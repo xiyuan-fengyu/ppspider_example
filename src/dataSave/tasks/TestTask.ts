@@ -14,8 +14,6 @@ import {Ssh2Client} from "../util/Ssh2Client";
 import {config} from "../config";
 import * as fs from "fs";
 import {MysqlDao} from "../dao/MysqlDao";
-import {userDao} from "../dao/UserDao";
-import {User} from "../model/User";
 
 export class TestTask {
 
@@ -30,7 +28,7 @@ export class TestTask {
         workerFactory: PuppeteerWorkerFactory
     })
     async index(page: Page, job: Job) {
-        await page.goto(job.url());
+        await page.goto(job.url);
         const urls = await PuppeteerUtil.links(page, {
             "all": "http.*"
         });
@@ -78,11 +76,11 @@ export class TestTask {
         });
 
         // 存储数据到 nedb
-        await userDao.save(new User({
+        await appInfo.db.save("user", {
             name: "Tom",
             age: 25,
             gender: "boy"
-        }));
+        });
     }
 
 }

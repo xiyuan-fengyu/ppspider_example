@@ -1,7 +1,6 @@
 import {
     AddToQueue,
     AddToQueueData,
-    DefaultJob,
     FromQueue,
     Job,
     Launcher, logger,
@@ -22,14 +21,14 @@ class TestTask {
         filterType: NoFilter
     })
     async addJobTest(req: Request, res: Response, next: any): AddToQueueData {
-        const job = new DefaultJob(req.query.url);
-        job.datas({
-           notifyUrl: req.query.notifyUrl
-        });
+        const job = new Job(req.query.url);
+        job.datas = {
+            notifyUrl: req.query.notifyUrl
+        };
         res.send({
             success: true,
             message: "任务添加成功",
-            jobId: job.id()
+            jobId: job._id
         });
         return job;
     }
@@ -39,15 +38,15 @@ class TestTask {
         workerFactory: PuppeteerWorkerFactory
     })
     async test(page: Page, job: Job) {
-        await page.goto(job.url());
+        await page.goto(job.url);
         const title = await page.$eval("title", ele => ele.textContent);
         request({
-            url: job.datas().notifyUrl,
+            url: job.datas.notifyUrl,
             method: "POST",
             json: {
                 job: {
-                    id: job.id(),
-                    url: job.url()
+                    id: job._id,
+                    url: job.url
                 },
                 title: title
             }

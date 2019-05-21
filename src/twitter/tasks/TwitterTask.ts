@@ -2,7 +2,6 @@ import {
     AddToQueue,
     AddToQueueData,
     appInfo,
-    DefaultJob,
     FileUtil,
     FromQueue,
     Job,
@@ -30,10 +29,10 @@ export class TwitterTask {
         // return "http://www.baidu.com";
         return topics.map(item => {
             const url = `https://mobile.twitter.com/search?q=${encodeURI(item)}&src=typed_query`;
-            const tempJob = new DefaultJob(url);
-            tempJob.datas({
+            const tempJob = new Job(url);
+            tempJob.datas = {
                name: item
-            });
+            };
             return tempJob;
         });
     }
@@ -54,7 +53,7 @@ export class TwitterTask {
             PuppeteerUtil.setImgLoad(page, false)
         ]);
 
-        await page.goto(job.url());
+        await page.goto(job.url);
         await PuppeteerUtil.addJquery(page);
 
         const comments = await page.evaluate(config => new Promise(resolve => {
@@ -183,10 +182,10 @@ export class TwitterTask {
         logger.debugValid && logger.debug(JSON.stringify(comments, null, 4));
 
         // 保存评论信息
-        const name = job.datas().name;
+        const name = job.datas.name;
         const prettyName = name.replace(new RegExp("[\/. ]", "g"), "_");
         FileUtil.write(appInfo.workplace + "/data/topics/" + prettyName + ".json", JSON.stringify({
-            url: job.url(),
+            url: job.url,
             name: name,
             comments: comments
         }));
@@ -198,11 +197,11 @@ export class TwitterTask {
             if (comment.replyTos) comment.replyTos.forEach(id => userIds.push(id));
         });
         return userIds.map(userId => {
-            const tempJob = new DefaultJob(`https://mobile.twitter.com/${userId}`);
-            tempJob.datas({
+            const tempJob = new Job(`https://mobile.twitter.com/${userId}`);
+            tempJob.datas = {
                 id: userId
-            });
-            tempJob.key(userId);
+            };
+            tempJob.key = userId;
             return tempJob;
         });
     }
@@ -248,10 +247,10 @@ export class TwitterTask {
             catch (e) {
             }
         });
-        await page.goto(job.url());
+        await page.goto(job.url);
 
         let userInfo: any = await waitUserInfo;
-        const userId = job.datas().id;
+        const userId = job.datas.id;
         if (userInfo == null) {
             // 监听用户信息的相应超时，抛出异常，任务失败，任务将会重试两次
             throw new Error(`fail to get userInfo, id: ${userId}`);

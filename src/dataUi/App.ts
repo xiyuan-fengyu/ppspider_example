@@ -2,7 +2,6 @@ import {
     appInfo,
     DataUi,
     DataUiRequest,
-    DefaultJob,
     DefaultQueue,
     FromQueue,
     getBean,
@@ -234,10 +233,10 @@ class TestTask {
 
     @DataUiRequest(DynamicJobUi.prototype.addJob)
     addDynamicJob(url: string, evaluateJs: string) {
-        const job = new DefaultJob(url);
-        job.datas({
+        const job = new Job(url);
+        job.datas = {
             evaluateJs: evaluateJs
-        });
+        };
         appInfo.queueManager.addToQueue(null, {
             queueName: "dynamic",
             jobs: job,
@@ -245,7 +244,7 @@ class TestTask {
             queueType: DefaultQueue
         });
         return {
-            id: job.id(),
+            id: job._id,
             url: url,
             evaluateJs: evaluateJs
         };
@@ -257,14 +256,14 @@ class TestTask {
     })
     async dynamicJob(page: Page, job: Job) {
         await PuppeteerUtil.defaultViewPort(page);
-        await page.goto(job.url());
+        await page.goto(job.url);
         await PuppeteerUtil.addJquery(page);
-        const fun = eval(job.datas().evaluateJs);
+        const fun = eval(job.datas.evaluateJs);
         const result = await page.evaluate(fun);
         getBean(DynamicJobUi).asyncJobResult({
-            id: job.id(),
-            url: job.url(),
-            evaluateJs: job.datas().evaluateJs,
+            id: job._id,
+            url: job.url,
+            evaluateJs: job.datas.evaluateJs,
             result: result
         });
     }

@@ -4,7 +4,6 @@ import {
     DataUi,
     DataUiRequest,
     DateUtil,
-    DefaultJob,
     FileUtil,
     FromQueue,
     getBean,
@@ -253,7 +252,7 @@ export class ScreenshotHelperUi {
     }
 
     screenshotInfo(job) {
-        const data = job.serialize._datas;
+        const data = job.datas;
         this.url = data.url;
         this.fullPage = data.fullPage;
         this.preScroll = data.preScroll;
@@ -344,14 +343,14 @@ class ScreenshotTask {
         filterType: NoFilter
     })
     async addScreenshotJob(params: ScreenshotConfig) {
-        const job = new DefaultJob(params.url);
+        const job = new Job(params.url);
         const jobData = {
             _: {
                 maxTry: 1
             }
         };
         Object.assign(jobData, params);
-        job.datas(jobData);
+        job.datas = jobData;
         return job;
     }
 
@@ -360,7 +359,7 @@ class ScreenshotTask {
      */
     @DataUiRequest(ScreenshotHelperUi.prototype.loadScreenshotHistory)
     async loadScreenshotHistory() {
-        return NedbDao.db("JobDao").findList({
+        return appInfo.db.findList("job", {
             queue: "screenshot",
             status: JobStatus.Success
         }, null, {
@@ -373,7 +372,7 @@ class ScreenshotTask {
      */
     @DataUiRequest(ScreenshotHelperUi.prototype.loadScreenshotInfo)
     async loadScreenshotInfo(job: any) {
-        const screenshotRes = job.serialize._datas;
+        const screenshotRes = job.datas;
         screenshotRes.id = job._id;
         screenshotRes.imgs = [];
         const files = fs.readdirSync(appInfo.workplace + "/screenshot");
@@ -403,7 +402,7 @@ class ScreenshotTask {
                 fs.unlinkSync(appInfo.workplace + "/screenshot/" + file);
             }
         }
-        return NedbDao.db("JobDao").remove({
+        return appInfo.db.remove("job", {
             _id: jobId
         }, false);
     }
@@ -421,9 +420,9 @@ class ScreenshotTask {
     async screenshot(page: Page, job: Job) {
         FileUtil.mkdirs(appInfo.workplace + "/screenshot");
 
-        const jobData = job.datas() as ScreenshotConfig;
+        const jobData = job.datas as ScreenshotConfig;
         const screenshotRes = {
-            id: job.id(),
+            id: job._id,
             imgs: [],
             saveType: jobData.saveType,
             total: 1
@@ -435,7 +434,7 @@ class ScreenshotTask {
             height: 1080
         });
         try {
-            await page.goto(job.url(), { waitUntil: 'networkidle0' });
+            await page.goto(job.url, { waitUntil: 'networkidle0' });
         }
         catch (e) {
             getBean(ScreenshotHelperUi).onError(e.message);

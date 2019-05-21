@@ -22,8 +22,8 @@ class TestTask {
         name: "test"
     })
     async fromQueue(useless: any, job: Job) {
-        logger.debug("fetch job from test queue and execute: " + job.url());
-        if (job.url() === "job_2") {
+        logger.debug("fetch job from test queue and execute: " + job.url);
+        if (job.url === "job_2") {
             return "job_4";
         }
     }

@@ -17,7 +17,7 @@ class TestTask {
     @JobOverride("test")
     overrideJobKey(job: Job) {
         // job_2#1 和 job_3#2 两个任务的key将改为 job_2，job_3，然后被 BloonFilter 过滤掉
-        job.key(job.url().split("#")[0]);
+        job.key = job.url.split("#")[0];
     }
 
     @FromQueue({
@@ -25,7 +25,7 @@ class TestTask {
         workerFactory: NoneWorkerFactory
     })
     async fromQueue(useless: any, job: Job) {
-        logger.debug("fetch job from test queue and execute: " + job.url());
+        logger.debug("fetch job from test queue and execute: " + job.url);
     }
 
 }

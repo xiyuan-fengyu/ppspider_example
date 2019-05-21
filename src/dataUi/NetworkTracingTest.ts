@@ -7,11 +7,8 @@ import {
     FromQueue,
     Job,
     Launcher,
-    NedbDao,
-    NedbModel,
     NetworkTracing,
     NoFilter,
-    PageRequests,
     PuppeteerUtil,
     PuppeteerWorkerFactory,
     RequestMapping,
@@ -77,26 +74,10 @@ class NetworkTracingTestUi {
 
 }
 
-class NetworkTracingModel extends NedbModel {
-
-    data: PageRequests;
-
-    constructor(_id: string, data: PageRequests) {
-        super(_id);
-        this.data = data;
-    }
-
-}
-
-class NetworkTracingDao extends NedbDao<NetworkTracingModel> {}
-
 class NetworkTracingTask {
 
     @Autowired(NetworkTracingTestUi)
     private networkTracingTestUi: NetworkTracingTestUi;
-
-    @Transient()
-    private networkTracingDao = new NetworkTracingDao(appInfo.workplace + "/nedb");
 
     @DataUiRequest(NetworkTracingTestUi.prototype.addJob)
     @AddToQueue({
@@ -113,19 +94,20 @@ class NetworkTracingTask {
         workerFactory: PuppeteerWorkerFactory
     })
     async networkTracing(page: Page, job: Job) {
-        this.networkTracingTestUi.onProcess(job.url() + " 正在打开");
+        this.networkTracingTestUi.onProcess(job.url + " 正在打开");
         await PuppeteerUtil.defaultViewPort(page);
         const networkTracing = new NetworkTracing(page);
-        await page.goto(job.url());
+        await page.goto(job.url);
         const pageRequests = networkTracing.requests();
-        await this.networkTracingDao.save(new NetworkTracingModel(job.id(), pageRequests));
-        this.networkTracingTestUi.onProcess(job.url() + " NetworkTracing记录成功");
-        this.networkTracingTestUi.onProcess("open(" + job.id() + ")");
+        pageRequests["_id"] = job._id;
+        await appInfo.db.save("networkTracing", pageRequests);
+        this.networkTracingTestUi.onProcess(job.url + " NetworkTracing记录成功");
+        this.networkTracingTestUi.onProcess("open(" + job._id + ")");
     }
 
     @RequestMapping("/tracing")
     async getTracingFile(req: Request, res: Response) {
-        const pageRequests = (await this.networkTracingDao.findById(req.query.id)).data;
+        const pageRequests = await appInfo.db.findById("networkTracing", req.query.id);
         const traceEvents = NetworkTracing.requestsToTraceEvents(pageRequests);
         const traceEventsStr = JSON.stringify(traceEvents);
         res.header("Access-Control-Allow-Origin", "https://chromedevtools.github.io");

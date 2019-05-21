@@ -19,7 +19,7 @@ class TestTask {
         workerFactory: NoneWorkerFactory
     })
     async fromQueue(useless: any, job: Job) {
-        logger.debug("fetch job from test queue and execute: " + job.url());
+        logger.debug("fetch job from test queue and execute: " + job.url);
     }
 
 }
