@@ -214,6 +214,7 @@ class BilibiliTask {
                 else {
                     // 点击按钮，等待请求返回数据
                     const subReplyResWait = this.createWaitReplyOnce(page);
+                    await page.evaluate(selector => $(selector)[0].scrollIntoView(), tapSelector);
                     await page.tap(tapSelector);
                     await subReplyResWait;
                     subReplyPageIndex++;
