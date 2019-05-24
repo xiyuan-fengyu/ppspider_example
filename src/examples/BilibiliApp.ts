@@ -1,7 +1,7 @@
 import {
     AddToQueue,
     AddToQueueData,
-    appInfo,
+    appInfo, DbHelperUi,
     FromQueue,
     Job,
     JobOverride,
@@ -214,8 +214,11 @@ class BilibiliTask {
                 else {
                     // 点击按钮，等待请求返回数据
                     const subReplyResWait = this.createWaitReplyOnce(page);
-                    await page.evaluate(selector => $(selector)[0].scrollIntoView(), tapSelector);
-                    await page.tap(tapSelector);
+                    await page.evaluate(selector => {
+                        const btn = $(selector)[0];
+                        btn.scrollIntoView();
+                        btn.click();
+                    }, tapSelector);
                     await subReplyResWait;
                     subReplyPageIndex++;
                 }
@@ -230,6 +233,9 @@ class BilibiliTask {
     dbUrl: "mongodb://192.168.1.150:27017/bilibili",
     tasks: [
         BilibiliTask
+    ],
+    dataUis: [
+        DbHelperUi
     ],
     workerFactorys: [
         new PuppeteerWorkerFactory({
