@@ -27,7 +27,7 @@ npm install
 
 ## src/requestMapping
 演示了 @RequestMapping 声明 HTTP rest 接口，提供远程动态添加任务的能力  
-系统启动后，如下动态添加任务
+系统启动后，访问如下地址添加任务
 ```
 curl http://localhost:9000/addJob/test?url=justTestForRequestMapping
 ```
@@ -45,11 +45,10 @@ curl http://localhost:9000/addJob/test?url=justTestForRequestMapping
 1. 保存到本地文件中  
 2. 上传到服务器  
 3. 存入 mysql  
-4. @TODO 添加到 mongodb 
-5. 存储到 nedb （类 mongodb 的serverless本地数据库）    
 
-## src/bilibili  
-爬取B站视频信息和前几页评论（包括全部楼中楼）  
+## src/db
+演示了 nedb / mongodb 的使用方式  
+这两种数据库是内置封装好的，直接通过 appInfo.db 使用    
 
 ## src/qqMusic
 抓取 qq 音乐的信息 和 前 config.commentPages 页的评论  
