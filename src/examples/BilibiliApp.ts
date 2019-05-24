@@ -32,28 +32,28 @@ class BilibiliTask {
         urls: "https://www.bilibili.com/",
         workerFactory: PuppeteerWorkerFactory
     })
-    // @FromQueue({
-    //     name: "others",
-    //     workerFactory: PuppeteerWorkerFactory,
-    //     exeInterval: 5000,
-    //     parallel: 1
-    // })
+    @FromQueue({
+        name: "others",
+        workerFactory: PuppeteerWorkerFactory,
+        exeInterval: 5000,
+        parallel: 1
+    })
     @AddToQueue([
         { name: "videos" },
         { name: "others" }
     ])
     async roam(page: Page, job: Job): AddToQueueData {
-        // await PuppeteerUtil.defaultViewPort(page); // 设置分辨率 1920 * 1080
-        // await PuppeteerUtil.setImgLoad(page, false); // 禁用图片加载
-        // await page.goto(job.url); // 跳转网页
-        // await PuppeteerUtil.scrollToBottom(page); // 滚动到网页底部，以触发所有资源的加载
-        // return await PuppeteerUtil.links(page, {
-        //     videos: ".*bilibili.*/video/av.*",
-        //     others: ".*bilibili.*"
-        // });
-        return {
-            "videos": ["https://www.bilibili.com/video/av53238111/"]
-        };
+        await PuppeteerUtil.defaultViewPort(page); // 设置分辨率 1920 * 1080
+        await PuppeteerUtil.setImgLoad(page, false); // 禁用图片加载
+        await page.goto(job.url); // 跳转网页
+        await PuppeteerUtil.scrollToBottom(page); // 滚动到网页底部，以触发所有资源的加载
+        return await PuppeteerUtil.links(page, {
+            videos: ".*bilibili.*/video/av.*",
+            others: ".*bilibili.*"
+        });
+        // return {
+        //     "videos": ["https://www.bilibili.com/video/av53238111/"]
+        // };
     }
 
     @FromQueue({
