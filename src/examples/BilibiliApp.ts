@@ -54,7 +54,7 @@ class BilibiliTask {
         await PuppeteerUtil.defaultViewPort(page);
         await PuppeteerUtil.setImgLoad(page, false);
 
-        const aid = job.datas.id || 52511233;
+        const aid = job.datas.id;
         const videoInfo: any = {
             _id: aid
         };
