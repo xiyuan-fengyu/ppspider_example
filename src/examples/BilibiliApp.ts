@@ -52,13 +52,16 @@ class BilibiliTask {
     @AddToQueue({ name: "videos" })
     async video(page: Page, job: Job) {
         await PuppeteerUtil.defaultViewPort(page);
+        await PuppeteerUtil.setImgLoad(page, false);
 
         const aid = job.datas.id;
         const videoInfo: any = {
             _id: aid
         };
 
-        const now = new Date().getTime();
+        const tagsResWait = PuppeteerUtil.onceResponse(page, "api.bilibili.com/x/tag/archive/tags", async response => {
+            videoInfo.tags = PuppeteerUtil.jsonp(await response.text()).data;
+        });
         await page.goto(job.url);
         await PuppeteerUtil.addJquery(page);
 
@@ -67,57 +70,98 @@ class BilibiliTask {
         Object.assign(videoInfo, info.data);
         // 抓取相关视频列表
         videoInfo.related = (await this.get(page, `https://api.bilibili.com/x/web-interface/archive/related?aid=${aid}&jsonp=jsonp`)).data;
-        // 抓取视频的tags
-        videoInfo.tags = (await this.get(page, `https://api.bilibili.com/x/tag/archive/tags?callback=jqueryCallback_bili_504529975748391&aid=${aid}&jsonp=jsonp&_=${now}`)).data;
+        await tagsResWait;
 
         // 保存视频信息
         await appInfo.db.save("video", videoInfo);
 
-        // 抓取评论
-        let savePs = [];
-        let mainPageSize = 20;
-        let mainCount = 20;
-        for (let mainPageIndex = 1;
-             mainPageIndex <= config.maxReplyPageIndex && mainPageIndex * mainPageSize <= mainCount;
-             mainPageIndex++) {
-            // 获取主楼评论分页
-            const now = new Date().getTime();
-            const res = await this.get(page, `https://api.bilibili.com/x/v2/reply?callback=jQuery_${now}&jsonp=jsonp&pn=${mainPageIndex}&type=1&oid=${aid}&sort=2&_=${now}`);
-            await PromiseUtil.sleep(500); // 请求太频繁，会被墙
-            mainPageSize = res.data.page.size;
-            mainCount = res.data.page.count;
+        // 第一页的主楼评论
+        const mainReplyResWait = this.createWaitReplyOnce(page, "api.bilibili.com/x/v2/reply\\?");
+        await PuppeteerUtil.scrollToBottom(page, 5000, 100, 1000);
+        await mainReplyResWait;
 
-            for (let reply of res.data.replies) {
-                if (reply.rcount > 3) {
-                    // 需要获取楼中楼分页
-                    let subPageSize = 10;
-                    let subCount = 10;
-                    for (let subPageIndex = 1;
-                         subPageIndex * subPageSize <= subCount;
-                         subPageIndex++) {
-                        // 获取楼中楼评论分页
-                        const now = new Date().getTime();
-                        const res = await this.get(page, `https://api.bilibili.com/x/v2/reply/reply?callback=jQuery_${now}&jsonp=jsonp&pn=${subPageIndex}&type=1&oid=${aid}&ps=10&root=${reply.rpid}&_=${now}`);
-                        await PromiseUtil.sleep(500); // 请求太频繁，会被墙
-                        subPageSize = res.data.page.size;
-                        subCount = res.data.page.count;
-                        savePs.push(this.saveReplies(res.data.replies));
-                    }
+        // 抓取评论
+        for (let i = 1; i <= config.maxReplyPageIndex; i++) {
+            await this.getPageReplies(page, i);
+        }
+
+        return await PuppeteerUtil.links(page, {
+            videos: ".*bilibili.*/video/av.*"
+        });
+    }
+
+    private createWaitReplyOnce(page: Page, urlReg: string, timeout: number = 10000) {
+        // https://api.bilibili.com/x/v2/reply/reply?callback=jQuery33106326317261061538_1558689363028&jsonp=jsonp&pn=1&type=1&oid=53238111&ps=10&root=1623919246&_=1558689363031
+        return PuppeteerUtil.onceResponse(page, "api.bilibili.com/x/v2/reply(/reply)?\\?", async response => {
+            const res = PuppeteerUtil.jsonp(await response.text());
+            await this.saveReplies(res.data.replies);
+        }, timeout);
+    }
+
+    /**
+     * 主楼切换分页，楼中楼加载更多和切换分页
+     * @param page
+     * @param pageIndex
+     */
+    private async getPageReplies(page: Page, pageIndex: number) {
+        if (pageIndex == 1) {
+            // 第一页的主楼评论已经抓取了
+        }
+        else {
+            // 点击主楼换页，并监听接口返回结果
+            const nextPageBtnId = await PuppeteerUtil.specifyIdByJquery(page,
+                `#comment .bottom-page.paging-box-big a:contains('${pageIndex}')`);
+            if (!nextPageBtnId) return;
+
+            const mainReplyResWait = this.createWaitReplyOnce(page, "api.bilibili.com/x/v2/reply\\?");
+            await page.tap("#" + nextPageBtnId[0]);
+            await mainReplyResWait;
+        }
+
+        // 点击楼中楼的更多回复，抓取所有分页回复
+        // 获取当前页主楼中包含 “点击查看”按钮的楼层id
+        const replyIds: string[] = await page.evaluate(() => {
+            const ids = {};
+            $("#comment .comment-list .list-item.reply-wrap").each((index, div) => {
+                const $div = $(div);
+                if ($div.find("a.btn-more").length) {
+                    ids[$div.attr("data-id")] = true;
+                }
+            });
+            return Object.keys(ids);
+        });
+
+        for (let replyId of replyIds) {
+            // 抓取所有楼中楼回复
+            const btnMoreSelector = `#comment .comment-list .list-item.reply-wrap[data-id='${replyId}'] a.btn-more`;
+            let subReplyPageIndex = 1;
+            while (true) {
+                let tapSelector;
+                if (subReplyPageIndex == 1) {
+                    // 楼中楼第一页，点击 “点击查看”按钮记载更多
+                    tapSelector = btnMoreSelector;
                 }
                 else {
-                    // 直接存储
-                    const subReplies = reply.replies;
-                    delete reply.replies;
-                    savePs.push(this.saveReplies(subReplies));
+                    // 楼中楼第 n 页(n > 1)，点击“下一页”按钮换页
+                    const nextASelector = `#comment .comment-list .list-item.reply-wrap[data-id='${replyId}'] .paging-box a.next`;
+                    const nextACount = await PuppeteerUtil.count(page, nextASelector);
+                    if (nextACount > 0) tapSelector = nextASelector;
+                }
+
+                // 如果没有找到对应的按钮，跳出循环
+                if (!tapSelector) break;
+                else {
+                    // 点击按钮，等待请求返回数据
+                    const subReplyResWait = this.createWaitReplyOnce(page, "api.bilibili.com/x/v2/reply(/reply)?\\?", 5000);
+                    await page.tap(tapSelector);
+                    if ((await subReplyResWait).isTimeout) {
+                        // 继续尝试，子楼分页数不增加
+                    }
+                    else {
+                        subReplyPageIndex++;
+                    }
                 }
             }
-
-            savePs.push(this.saveReplies(res.data.replies));
-        }
-        await Promise.all(savePs);
-
-        if (videoInfo.related instanceof Array) {
-            return videoInfo.related.map(item => `https://www.bilibili.com/video/av${item.aid}`);
         }
     }
 
