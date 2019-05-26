@@ -6,7 +6,7 @@ import {
     Job,
     JobOverride,
     Launcher, NetworkTracing,
-    OnStart,
+    OnStart, PromiseUtil,
     PuppeteerUtil,
     PuppeteerWorkerFactory
 } from "ppspider";
@@ -52,27 +52,23 @@ class BilibiliTask {
     @AddToQueue({ name: "videos" })
     async video(page: Page, job: Job) {
         await PuppeteerUtil.defaultViewPort(page);
-        await PuppeteerUtil.setImgLoad(page, false);
 
         const aid = job.datas.id;
         const videoInfo: any = {
             _id: aid
         };
 
-        // 抓取视频的tags
-        const tagsResWait = PuppeteerUtil.onceResponse(page, "api.bilibili.com/x/tag/archive/tags", async response => {
-            videoInfo.tags = PuppeteerUtil.jsonp(await response.text()).data;
-        });
-
+        const now = new Date().getTime();
         await page.goto(job.url);
         await PuppeteerUtil.addJquery(page);
 
         // 抓取视频的基本信息 https://api.bilibili.com/x/web-interface/view?aid=avId
-        const info = await this.getVideoInfo(page, aid);
+        const info = await this.get(page, `https://api.bilibili.com/x/web-interface/view?aid=${aid}`);
         Object.assign(videoInfo, info.data);
         // 抓取相关视频列表
-        videoInfo.related = (await this.getRelated(page, aid)).data;
-        await tagsResWait;
+        videoInfo.related = (await this.get(page, `https://api.bilibili.com/x/web-interface/archive/related?aid=${aid}&jsonp=jsonp`)).data;
+        // 抓取视频的tags
+        videoInfo.tags = (await this.get(page, `https://api.bilibili.com/x/tag/archive/tags?callback=jqueryCallback_bili_504529975748391&aid=${aid}&jsonp=jsonp&_=${now}`)).data;
 
         // 保存视频信息
         await appInfo.db.save("video", videoInfo);
@@ -85,8 +81,9 @@ class BilibiliTask {
              mainPageIndex <= config.maxReplyPageIndex && mainPageIndex * mainPageSize <= mainCount;
              mainPageIndex++) {
             // 获取主楼评论分页
-            let now = new Date().getTime();
-            const res = await this.get(page, `https://api.bilibili.com/x/v2/reply?callback=jQuery1720985759999224225_${now}&jsonp=jsonp&pn=${mainPageIndex}&type=1&oid=${aid}&sort=2&_=${now}`);
+            const now = new Date().getTime();
+            const res = await this.get(page, `https://api.bilibili.com/x/v2/reply?callback=jQuery_${now}&jsonp=jsonp&pn=${mainPageIndex}&type=1&oid=${aid}&sort=2&_=${now}`);
+            await PromiseUtil.sleep(500); // 请求太频繁，会被墙
             mainPageSize = res.data.page.size;
             mainCount = res.data.page.count;
 
@@ -99,8 +96,9 @@ class BilibiliTask {
                          subPageIndex * subPageSize <= subCount;
                          subPageIndex++) {
                         // 获取楼中楼评论分页
-                        let now = new Date().getTime();
-                        const res = await this.get(page, `https://api.bilibili.com/x/v2/reply/reply?callback=jQuery1720628291533221834_${now}&jsonp=jsonp&pn=${subPageIndex}&type=1&oid=${aid}&ps=10&root=${reply.rpid}&_=${now}`);
+                        const now = new Date().getTime();
+                        const res = await this.get(page, `https://api.bilibili.com/x/v2/reply/reply?callback=jQuery_${now}&jsonp=jsonp&pn=${subPageIndex}&type=1&oid=${aid}&ps=10&root=${reply.rpid}&_=${now}`);
+                        await PromiseUtil.sleep(500); // 请求太频繁，会被墙
                         subPageSize = res.data.page.size;
                         subCount = res.data.page.count;
                         savePs.push(this.saveReplies(res.data.replies));
@@ -145,14 +143,6 @@ class BilibiliTask {
             }
         }
         return Promise.all(waitArr);
-    }
-
-    private getVideoInfo(page: Page, aid: number) {
-        return this.get(page, `https://api.bilibili.com/x/web-interface/view?aid=${aid}`);
-    }
-
-    private getRelated(page: Page, aid: number) {
-        return this.get(page, `https://api.bilibili.com/x/web-interface/archive/related?aid=${aid}&jsonp=jsonp`);
     }
 
     private async get(page: Page, url: string) {
