@@ -91,8 +91,7 @@ class BilibiliTask {
     }
 
     private createWaitReplyOnce(page: Page, urlReg: string, timeout: number = 10000) {
-        // https://api.bilibili.com/x/v2/reply/reply?callback=jQuery33106326317261061538_1558689363028&jsonp=jsonp&pn=1&type=1&oid=53238111&ps=10&root=1623919246&_=1558689363031
-        return PuppeteerUtil.onceResponse(page, "api.bilibili.com/x/v2/reply(/reply)?\\?", async response => {
+        return PuppeteerUtil.onceResponse(page, urlReg, async response => {
             const res = PuppeteerUtil.jsonp(await response.text());
             await this.saveReplies(res.data.replies);
         }, timeout);
