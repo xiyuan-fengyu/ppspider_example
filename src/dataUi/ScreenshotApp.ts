@@ -434,7 +434,7 @@ class ScreenshotTask {
             height: 1080
         });
         try {
-            await page.goto(job.url, { waitUntil: 'networkidle0' });
+            await page.goto(job.url, { waitUntil: 'networkidle2' });
         }
         catch (e) {
             getBean(ScreenshotHelperUi).onError(e.message);

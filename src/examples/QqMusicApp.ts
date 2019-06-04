@@ -42,7 +42,9 @@ class QqMusicTask {
     async index(page: Page, job: Job): AddToQueueData {
         await PuppeteerUtil.defaultViewPort(page);
         await PuppeteerUtil.setImgLoad(page, false);
-        await page.goto(job.url);
+        await page.goto(job.url, {waitUntil: "networkidle2"});
+        await PuppeteerUtil.addJquery(page);
+        await page.evaluate(() => $(".popup__hd .popup__close").trigger("click"));
         return await PuppeteerUtil.links(page, {
             qq_music_detail: "https://y.qq.com/n/yqq/song/.*",
             qq_music_other: "https://y.qq.com/.*"
@@ -89,7 +91,9 @@ class QqMusicTask {
                 await this.saveComments(songId, comments);
             }, 2);
 
-        await page.goto(job.url);
+        await page.goto(job.url, {waitUntil: "networkidle2"});
+        await PuppeteerUtil.addJquery(page);
+        await page.evaluate(() => $(".popup__hd .popup__close").trigger("click"));
         // 等待基本信息和第一页的评论抓取完成
         await Promise.all([waigSongInfoRes, waitLyricRes, waitCommentRes]);
 
@@ -99,9 +103,9 @@ class QqMusicTask {
         // 如果只有一页评论，可以找到 $(".comment__show_all_link") 这种节点
         const hasMorePage = await new Promise(resolve => {
             page.waitForSelector(".mod_page_nav.js_pager_comment .current", {timeout: 1000})
-                .then(() => resolve(true)).catch();
+                .then(() => resolve(true)).catch(err => {});
             page.waitForSelector(".comment__show_all_link", {timeout: 1000})
-                .then(() => resolve(false)).catch();
+                .then(() => resolve(false)).catch(err => {});
         });
 
         if (hasMorePage) {

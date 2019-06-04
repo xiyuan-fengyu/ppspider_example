@@ -9,7 +9,7 @@ export class TestTask {
     })
     async index(page: Page, job: Job) {
         const networkTracing = new NetworkTracing(page);
-        await page.goto(job.url, { waitUntil: 'networkidle0' });
+        await page.goto(job.url, { waitUntil: 'networkidle2' });
         const pageRequests = networkTracing.requests();
         pageRequests["_id"] = job._id;
         // 保存的数据可以在
