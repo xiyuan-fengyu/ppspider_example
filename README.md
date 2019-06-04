@@ -50,9 +50,6 @@ curl http://localhost:9000/addJob/test?url=justTestForRequestMapping
 演示了 nedb / mongodb 的使用方式  
 这两种数据库是内置封装好的，直接通过 appInfo.db 使用    
 
-## src/qqMusic
-抓取 qq 音乐的信息 和 前 config.commentPages 页的评论  
-
 ## src/twitter
 抓取推特上一些主题相关的讨论以及用户信息    
 
