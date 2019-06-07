@@ -94,7 +94,7 @@ class MziTuTask {
         const idpM = job.url.match("^https://www\\.mzitu\\.com/(\\d+)(/(\\d+))?/?$");
         job.datas.id = parseInt(idpM[1]);
         job.datas.p = parseInt(idpM[3]) || 1;
-        job.datas.img = $("div.main-image a > img")[0].attribs.src;
+        job.datas.img = $("div.main-image img")[0].attribs.src;
 
         // 下载图片
         const imgRes = await RequestUtil.simple({
