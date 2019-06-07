@@ -1,6 +1,7 @@
 import {
     AddToQueue,
-    appInfo, DbHelperUi,
+    appInfo,
+    DbHelperUi,
     FileUtil,
     FromQueue,
     Job,
@@ -10,11 +11,10 @@ import {
     RequestUtil
 } from "ppspider";
 import * as cheerio from "cheerio";
-import * as fs from "fs";
 
 class MziTuTask {
 
-    private
+    private userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36";
 
     @OnStart({
         urls: "https://www.mzitu.com/",
@@ -34,7 +34,7 @@ class MziTuTask {
             url: job.url,
             headers: {
                 "Referer": referer,
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"
+                "User-Agent": this.userAgent
             }
         });
 
@@ -82,7 +82,7 @@ class MziTuTask {
             url: job.url,
             headers: {
                 "Referer": job.datas.referer,
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"
+                "User-Agent": this.userAgent
             }
         });
 
@@ -98,7 +98,7 @@ class MziTuTask {
             url: job.datas.img,
             headers: {
                 "Referer": job.datas.referer,
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36"
+                "User-Agent": this.userAgent
             }
         });
         // 保存图片
