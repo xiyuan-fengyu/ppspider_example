@@ -72,7 +72,10 @@ class MziTuTask {
 
     @FromQueue({
         name: "img_detail_pages",
-        workerFactory: NoneWorkerFactory
+        workerFactory: NoneWorkerFactory,
+        parallel: 2,
+        exeInterval: 250,
+        exeIntervalJitter: 100
     })
     @AddToQueue([
         {name: "img_detail_pages"}
