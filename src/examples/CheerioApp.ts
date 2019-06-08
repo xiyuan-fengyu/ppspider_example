@@ -100,7 +100,7 @@ class MziTuTask {
         const imgRes = await RequestUtil.simple({
             url: job.datas.img,
             headers: {
-                "Referer": job.datas.referer,
+                "Referer": job.url,
                 "User-Agent": this.userAgent
             }
         });
