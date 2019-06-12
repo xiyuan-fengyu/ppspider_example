@@ -504,7 +504,7 @@ class ScreenshotTask {
 }
 
 @Launcher({
-    workplace: __dirname + "/workplace",
+    workplace: "workplace_screenshot",
     tasks: [
         ScreenshotTask
     ],

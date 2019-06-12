@@ -205,9 +205,9 @@ class BilibiliTask {
 }
 
 @Launcher({
-    workplace: __dirname + "/workplace",
+    workplace: "workplace_bilibili",
     // dbUrl: "mongodb://192.168.1.150:27017/bilibili",
-    dbUrl: "nedb://workplace/nedb_bilibili",
+    // dbUrl: "nedb://workplace_bilibili/nedb",
     tasks: [
         BilibiliTask
     ],

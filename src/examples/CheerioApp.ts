@@ -127,7 +127,7 @@ class MziTuTask {
 }
 
 @Launcher({
-    workplace: __dirname + "/workplace_mzitu",
+    workplace: "workplace_mzitu",
     tasks: [
         MziTuTask
     ],

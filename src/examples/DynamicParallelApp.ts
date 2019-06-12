@@ -29,7 +29,7 @@ class TestTask {
 }
 
 @Launcher({
-    workplace: __dirname + "/workplace",
+    workplace: "workplace_dyncmicParallel",
     tasks: [
         TestTask
     ],

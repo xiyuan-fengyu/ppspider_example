@@ -151,9 +151,7 @@ class QqMusicTask {
 }
 
 @Launcher({
-    workplace: "workplace",
-    queueCache: "workplace/queueCache_qq_music.txt",
-    dbUrl: "nedb://workplace/nedb_qq_music",
+    workplace: "workplace_qqMusic",
     tasks: [
         QqMusicTask
     ],
