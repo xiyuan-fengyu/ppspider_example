@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "mysql": "^2.16.0",
-    "ppspider": "2.1.10",
+    "ppspider": "^2.1.10",
     "cheerio": "^1.0.0-rc.3",
     "ssh2": "^0.6.1"
   },
