@@ -122,7 +122,7 @@ class NetworkTracingTask {
 }
 
 @Launcher({
-    workplace: __dirname + "/workplace",
+    workplace: "workplace_networkTracing",
     tasks: [
         NetworkTracingTask
     ],

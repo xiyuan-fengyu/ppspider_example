@@ -3,7 +3,7 @@ import {TestTask} from "./tasks/TestTask";
 import {config} from "./config";
 
 @Launcher({
-    workplace: __dirname + "/workplace",
+    workplace: "workplace",
     tasks: [
         TestTask
     ],

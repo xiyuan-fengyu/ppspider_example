@@ -66,7 +66,7 @@ class TestTask {
 // 测试方式：启动后，浏览器访问 http://localhost:9000/addJob/test?url=https%3A%2F%2Fwww.baidu.com&notifyUrl=http%3A%2F%2Flocalhost%3A9000%2FjobResult
 
 @Launcher({
-    workplace: __dirname + "/workplace",
+    workplace: "workplace",
     tasks: [
         TestTask
     ],

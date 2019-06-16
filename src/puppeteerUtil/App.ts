@@ -2,7 +2,7 @@ import {Launcher, PuppeteerWorkerFactory} from "ppspider";
 import {TestTask} from "./tasks/TestTask";
 
 @Launcher({
-    workplace: __dirname + "/workplace",
+    workplace: "workplace",
     tasks: [
         TestTask
     ],

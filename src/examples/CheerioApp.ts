@@ -103,7 +103,7 @@ class MziTuTask {
             }
         });
         // 保存图片
-        FileUtil.write(appInfo.workplace + "/mzitu/" + job.datas.id + "_" + job.datas.p + ".jpg", imgRes.body as any);
+        FileUtil.write(appInfo.workplace + "/mzitu/" + job.datas.id + "_" + job.datas.p + ".jpg", imgRes.body);
 
         const detailUrls = $("div.pagenavi > a, div.hotlist > dd > a").map((index, element) => {
             const href = element.attribs.href;
@@ -124,7 +124,7 @@ class MziTuTask {
 }
 
 @Launcher({
-    workplace: __dirname + "/workplace_mzitu",
+    workplace: "workplace_mzitu",
     tasks: [
         MziTuTask
     ],

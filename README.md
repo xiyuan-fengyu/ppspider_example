@@ -10,9 +10,6 @@ npm install
 ## src/quickstart
 演示了 @OnStart 装饰器的作用  
 在爬虫系统启动后，立即执行一个任务  
-任务行为：  
-打开 http://www.baidu.com  
-加载完成后， 获取并打印所有以 http 开头的连接  
 
 ## src/ontime
 演示了 @OnTime 装饰器的作用  
@@ -20,16 +17,13 @@ npm install
 这例子中仅仅是每个5秒钟打印一次时间  
 
 ## src/queue
-演示了 @AddToQueue @FromQueue 装饰器的左右  
-任务行为： 
-系统启动后，抓取所有 http 开头的连接，通过 @AddToQueue 添加到 test 队列中  
-@FromQueue 则从 test 队列中获取任务，并交由 printUrl 方法处理    
+演示了 @AddToQueue @FromQueue 装饰器的作用    
 
 ## src/requestMapping
 演示了 @RequestMapping 声明 HTTP rest 接口，提供远程动态添加任务的能力  
 系统启动后，访问如下地址添加任务
 ```
-curl http://localhost:9000/addJob/test?url=justTestForRequestMapping
+curl http://localhost:9000/addJob/test?url=https%3A%2F%2Fwww.baidu.com&notifyUrl=http%3A%2F%2Flocalhost%3A9000%2FjobResult
 ```
 
 ## src/puppeteerUtil
@@ -49,21 +43,3 @@ curl http://localhost:9000/addJob/test?url=justTestForRequestMapping
 ## src/db
 演示了 nedb / mongodb 的使用方式  
 这两种数据库是内置封装好的，直接通过 appInfo.db 使用    
-
-## src/twitter
-抓取推特上一些主题相关的讨论以及用户信息    
-
-修改 src/twitter/movies.ts 添加主题  
-每行一个  
-```
-export const movies =
-`
-主题1
-主题2
-主题3
-`.split("\n").map(item => item.trim()).filter(item => item.length > 0);
-```
-运行前需要修改的配置  
-src/twitter/config.ts   
-dev.puppeteer.args --proxy-server=ip:port 设置代理  
-dev.twitter.commentMaxNum 一个主题最多抓取多少条评论  

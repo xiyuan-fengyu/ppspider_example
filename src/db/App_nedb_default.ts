@@ -19,8 +19,8 @@ export class TestTask {
 }
 
 @Launcher({
-    workplace: __dirname + "/workplace",
-    // dbUrl: "nedb://" + __dirname + "/workplace/nedb",
+    workplace: "workplace_nedb",
+    // dbUrl: "nedb://workplace_nedb/nedb",
     tasks: [
         TestTask
     ],

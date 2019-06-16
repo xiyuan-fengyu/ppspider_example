@@ -21,7 +21,7 @@ export class TestTask {
 }
 
 @Launcher({
-    workplace: __dirname + "/workplace",
+    workplace: "workplace",
     tasks: [
         TestTask
     ],
