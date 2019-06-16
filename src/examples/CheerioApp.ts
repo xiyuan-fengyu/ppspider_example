@@ -40,21 +40,19 @@ class MziTuTask {
 
         const $ = cheerio.load(htmlRes.body);
 
-        const detailUrls = [];
-        $("#pins > li > a").each((index, element) => {
-            const href = element.attribs.href;
-            if (href && href.match("^https://www\\.mzitu\\.com/\\d+/?$")) {
-                detailUrls.push(href);
-            }
-        });
-
-        const listUrls = [];
-        $("nav div.nav-links a.page-numbers").each((index, element) => {
+        const listUrls = $("nav div.nav-links a.page-numbers").map((index, element) => {
             const href = element.attribs.href;
             if (href && href.match("^https://www\\.mzitu\\.com/page/\\d+/?$")) {
-                listUrls.push(href);
+                return href;
             }
-        });
+        }).get().filter(item => item != null);
+
+        const detailUrls = $("#pins > li > a").map((index, element) => {
+            const href = element.attribs.href;
+            if (href && href.match("^https://www\\.mzitu\\.com/\\d+/?$")) {
+                return href;
+            }
+        }).get().filter(item => item != null);
 
         return {
             img_list_pages: listUrls.map(url => {
@@ -107,13 +105,12 @@ class MziTuTask {
         // 保存图片
         FileUtil.write(appInfo.workplace + "/mzitu/" + job.datas.id + "_" + job.datas.p + ".jpg", imgRes.body as any);
 
-        const detailUrls = [];
-        $("div.pagenavi > a, div.hotlist > dd > a").each((index, element) => {
+        const detailUrls = $("div.pagenavi > a, div.hotlist > dd > a").map((index, element) => {
             const href = element.attribs.href;
             if (href && href.match("^https://www\\.mzitu\\.com/\\d+(/\\d+)/?$")) {
-                detailUrls.push(href);
+                return href;
             }
-        });
+        }).get().filter(item => item != null);
 
         return {
             img_detail_pages: detailUrls.map(url => {
