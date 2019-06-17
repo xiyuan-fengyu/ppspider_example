@@ -58,7 +58,7 @@ class QuotesTask {
 }
 
 @Launcher({
-    workplace: __dirname + "/workplace_quotes",
+    workplace: "workplace_quotes",
     tasks: [
         QuotesTask
     ],
