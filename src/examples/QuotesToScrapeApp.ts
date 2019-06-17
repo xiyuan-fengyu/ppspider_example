@@ -4,7 +4,7 @@ import {
     DbHelperUi,
     FromQueue,
     Job,
-    Launcher,
+    Launcher, logger,
     NoneWorkerFactory,
     OnStart,
     RequestUtil
@@ -30,6 +30,8 @@ class QuotesTask {
     })
     @AddToQueue({name: "quote_pages"})
     async getQuotes(useless: any, job: Job) {
+        job.depth == 0 && logger.info("open http://localhost:9000/#/dataUi/DbHelperUi, choose quotes collection and submit, you will say the quotes.");
+
         const htmlRes = await RequestUtil.simple({url: job.url});
         const $ = cheerio.load(htmlRes.body);
 
@@ -39,7 +41,7 @@ class QuotesTask {
                 text: $quoteEle.find(".text").text().replace(/^[“"]|[”"]$/g, ""),
                 author: $quoteEle.find(".author").text(),
                 tags: $quoteEle.find(".tags .tag").map((tagI, tagEle) => $(tagEle).text()).get()
-            }
+            };
         }).get();
 
         for (let item of quotes) {
@@ -47,12 +49,10 @@ class QuotesTask {
             await appInfo.db.save("quotes", item);
         }
 
-        // 由于 href 属性是 /page/2/ 这种不完整的格式，需要通过 url.resolve 和 baseUrl 计算出完整路径
-        const baseUrl = $("base").map((index, element) => element.attribs.href).get()[0] || job.url;
-        const nextUrl = $("nav > ul.pager > li.next > a")
-            .map((index, element) => url.resolve(baseUrl, element.attribs.href)).get();
         // 只添加到一个队列中，所以不需要通过 {quote_pages: urls} 的方式具体指明加到哪个队列
-        return nextUrl;
+        // 由于 href 属性是 /page/2/ 这种不完整的格式，需要通过 url.resolve 计算出完整路径
+        return $("nav > ul.pager > li.next > a")
+            .map((index, element) => url.resolve(job.url, element.attribs.href)).get();
     }
 
 }
