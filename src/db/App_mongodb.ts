@@ -1,4 +1,4 @@
-import {appInfo, DbHelperUi, Job, Launcher, NetworkTracing, OnStart, PuppeteerWorkerFactory} from "ppspider";
+import {appInfo, DbHelperUi, Job, Launcher, logger, NetworkTracing, OnStart, PuppeteerWorkerFactory} from "ppspider";
 import {Page} from "puppeteer";
 
 export class TestTask {
@@ -12,15 +12,15 @@ export class TestTask {
         await page.goto(job.url, { waitUntil: 'networkidle2' });
         const pageRequests = networkTracing.requests();
         pageRequests["_id"] = job._id;
-        // 保存的数据可以在
         await appInfo.db.save("networkTracing", pageRequests);
+        logger.info(`open http://localhost:9000/#/dataUi/DbHelperUi, choose networkTracing collection and submit, you will see the saved data.`);
     }
 
 }
 
 @Launcher({
     workplace: "workplace_mongodb",
-    dbUrl: "mongodb://192.168.1.150:27017/ppspider",
+    dbUrl: "mongodb://192.168.99.150:27017/ppspider",
     tasks: [
         TestTask
     ],
