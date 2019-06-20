@@ -12,6 +12,7 @@ import {
     PuppeteerUtil,
     PuppeteerWorkerFactory
 } from "ppspider";
+import {Request} from "puppeteer";
 
 /**
  * 抓取 https://www.bilibili.com/ 视频信息和评论
@@ -149,14 +150,39 @@ class BilibiliTask {
                 // 如果没有找到对应的按钮，跳出循环
                 if (!tapSelector) break;
                 else {
-                    // 点击按钮，等待请求返回数据
-                    const subReplyResWait = this.createWaitReplyOnce(page, "api.bilibili.com/x/v2/reply(/reply)?\\?", 5000);
+                    // 点击按钮，等待发起请求
+                    const waitRequest = new Promise((resolve, reject) => {
+                        const reqHandler =  (req: Request) => {
+                            if (req.url().match("api.bilibili.com/x/v2/reply(/reply)?\\?")) {
+                                page.off("request", reqHandler);
+                                resolve(true);
+                            }
+                        };
+                        setTimeout(() => {
+                            page.off("request", reqHandler);
+                            resolve(false);
+                        }, 500);
+                        page.on("request", reqHandler);
+                    });
                     await page.tap(tapSelector);
-                    if ((await subReplyResWait).isTimeout) {
-                        // 继续尝试，子楼分页数不增加
+                    let isSuccess = false;
+                    if (await waitRequest) {
+                        // 请求成功发出
+                        const subReplyResWait = this.createWaitReplyOnce(page, "api.bilibili.com/x/v2/reply(/reply)?\\?", 5000);
+                        if (!(await subReplyResWait).isTimeout) {
+                            // 请求结果获取成功
+                            isSuccess = true;
+                        }
+                    }
+
+                    if (isSuccess) {
+                        subReplyPageIndex++;
                     }
                     else {
-                        subReplyPageIndex++;
+                        // 请求不成功，如果出现登录框，删除之，然后继续尝试，子楼分页数不增加
+                        if (await PuppeteerUtil.count(page, "iframe#bilibili-quick-login") > 0) {
+                            await page.evaluate(() => $("iframe#bilibili-quick-login").remove());
+                        }
                     }
                 }
             }
