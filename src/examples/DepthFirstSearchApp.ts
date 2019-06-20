@@ -5,21 +5,18 @@ import {
     Job, JobOverride,
     Launcher,
     logger,
-    OnStart,
+    OnStart, Page,
     PuppeteerUtil,
     PuppeteerWorkerFactory
 } from "ppspider";
-import {Page} from "puppeteer";
 
 class TestTask {
 
     @OnStart({
-        urls: "https://www.bilibili.com",
-        workerFactory: PuppeteerWorkerFactory
+        urls: "https://www.bilibili.com"
     })
     @FromQueue({
         name: "dfs_queue",
-        workerFactory: PuppeteerWorkerFactory,
         parallel: 2,
         exeInterval: 250
     })

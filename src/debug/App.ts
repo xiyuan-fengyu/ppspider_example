@@ -1,11 +1,9 @@
-import {Job, Launcher, logger, OnStart, PuppeteerWorkerFactory} from "ppspider";
-import {Page} from "puppeteer";
+import {Job, Launcher, logger, OnStart, Page, PuppeteerWorkerFactory} from "ppspider";
 
 export class TestTask {
 
     @OnStart({
-        urls: "http://www.baidu.com",
-        workerFactory: PuppeteerWorkerFactory
+        urls: "http://www.baidu.com"
     })
     async index(page: Page, job: Job) {
         await page.goto(job.url);

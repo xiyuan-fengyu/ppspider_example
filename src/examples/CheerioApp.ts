@@ -17,18 +17,16 @@ class MziTuTask {
     private userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36";
 
     @OnStart({
-        urls: "https://www.mzitu.com/",
-        workerFactory: NoneWorkerFactory // 由于使用 Request + cheerio 获取网页并解析
+        urls: "https://www.mzitu.com/"
     })
     @FromQueue({
-        name: "img_list_pages",
-        workerFactory: NoneWorkerFactory
+        name: "img_list_pages"
     })
     @AddToQueue([
         {name: "img_list_pages"},
         {name: "img_detail_pages"}
     ])
-    async list(useless: any, job: Job) {
+    async list(job: Job) {
         const referer = job.datas.referer || "https://www.mzitu.com/";
         const htmlRes = await RequestUtil.simple({
             url: job.url,
@@ -70,7 +68,6 @@ class MziTuTask {
 
     @FromQueue({
         name: "img_detail_pages",
-        workerFactory: NoneWorkerFactory,
         parallel: 2,
         exeInterval: 250,
         exeIntervalJitter: 100
@@ -78,7 +75,7 @@ class MziTuTask {
     @AddToQueue([
         {name: "img_detail_pages"}
     ])
-    async detail(useless: any, job: Job) {
+    async detail(job: Job) {
         const htmlRes = await RequestUtil.simple({
             url: job.url,
             headers: {

@@ -20,16 +20,14 @@ function md5(text: string) {
 class QuotesTask {
 
     @OnStart({
-        urls: "http://quotes.toscrape.com/",
-        workerFactory: NoneWorkerFactory
+        urls: "http://quotes.toscrape.com/"
     })
     @FromQueue({
         name: "quote_pages",
-        workerFactory: NoneWorkerFactory,
         exeInterval: 0
     })
     @AddToQueue({name: "quote_pages"})
-    async getQuotes(useless: any, job: Job) {
+    async getQuotes(job: Job) {
         job.depth == 0 && logger.info("open http://localhost:9000/#/dataUi/DbHelperUi, choose quotes collection and submit, you will say the quotes.");
 
         const htmlRes = await RequestUtil.simple({url: job.url});

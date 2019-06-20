@@ -1,11 +1,19 @@
-import {appInfo, DbHelperUi, Job, Launcher, logger, NetworkTracing, OnStart, PuppeteerWorkerFactory} from "ppspider";
-import {Page} from "puppeteer";
+import {
+    appInfo,
+    DbHelperUi,
+    Job,
+    Launcher,
+    logger,
+    NetworkTracing,
+    OnStart,
+    Page,
+    PuppeteerWorkerFactory
+} from "ppspider";
 
 export class TestTask {
 
     @OnStart({
-        urls: "http://www.baidu.com",
-        workerFactory: PuppeteerWorkerFactory
+        urls: "http://www.baidu.com"
     })
     async index(page: Page, job: Job) {
         const networkTracing = new NetworkTracing(page);

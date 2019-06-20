@@ -3,19 +3,17 @@ import {
     appInfo,
     DataUi,
     DataUiRequest,
-    DateUtil,
     FileUtil,
     FromQueue,
     getBean,
     Job,
     JobStatus,
     Launcher,
-    NedbDao,
     NoFilter,
+    Page,
     PuppeteerUtil,
     PuppeteerWorkerFactory
 } from "ppspider";
-import {Page} from "puppeteer";
 import * as fs from "fs";
 
 declare const CodeMirror: any;
@@ -414,7 +412,6 @@ class ScreenshotTask {
      */
     @FromQueue({
         name: "screenshot",
-        workerFactory: PuppeteerWorkerFactory,
         timeout: -1
     })
     async screenshot(page: Page, job: Job) {

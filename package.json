@@ -7,9 +7,10 @@
     "auto build": "tsc"
   },
   "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
     "mysql": "^2.16.0",
     "ppspider": "^2.1.11",
-    "cheerio": "^1.0.0-rc.3",
+    "reflect-metadata": "^0.1.13",
     "ssh2": "^0.6.1"
   },
   "devDependencies": {

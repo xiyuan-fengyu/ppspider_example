@@ -7,9 +7,9 @@ import {
     OnStart,
     PuppeteerUtil,
     PuppeteerWorkerFactory,
-    Transient
+    Transient,
+    Page
 } from "ppspider";
-import {Page} from "puppeteer";
 import {Ssh2Client} from "../util/Ssh2Client";
 import {config} from "../config";
 import * as fs from "fs";
@@ -24,8 +24,7 @@ export class TestTask {
     private mysqlDao = new MysqlDao(config.mysql);
 
     @OnStart({
-        urls: "http://www.baidu.com",
-        workerFactory: PuppeteerWorkerFactory
+        urls: "http://www.baidu.com"
     })
     async index(page: Page, job: Job) {
         await page.goto(job.url);

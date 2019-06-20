@@ -7,12 +7,10 @@ import {
     Job,
     Launcher,
     logger,
-    NoneWorkerFactory,
-    OnStart,
+    OnStart, Page,
     PuppeteerUtil,
     PuppeteerWorkerFactory
 } from "ppspider";
-import {Page} from "puppeteer";
 
 const topics = `
 Farewell my concubine
@@ -36,13 +34,12 @@ class TwitterTask {
     @OnStart({
         description: "从 topics 把所有任务加载到 topics 队列中",
         urls: "",
-        workerFactory: NoneWorkerFactory,
         parallel: 1
     })
     @AddToQueue({
         name: "topics"
     })
-    async addTopicsToQueue(worker: any, job: Job): AddToQueueData {
+    async addTopicsToQueue(): AddToQueueData {
         return topics.map(item => {
             const tempJob = new Job(`https://mobile.twitter.com/search?q=${encodeURI(item)}&src=typed_query`);
             tempJob.datas.topic = item;
@@ -53,7 +50,6 @@ class TwitterTask {
     @FromQueue({
         description: "抓取一个 topic 的评论列表信息",
         name: "topics",
-        workerFactory: PuppeteerWorkerFactory,
         parallel: 1,
         exeInterval: 5000
     })
@@ -220,7 +216,6 @@ class TwitterTask {
     @FromQueue({
         description: "抓取一个user的信息",
         name: "users",
-        workerFactory: PuppeteerWorkerFactory,
         parallel: 1,
         exeInterval: 5000
     })

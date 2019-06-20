@@ -1,26 +1,24 @@
-import {appInfo, Job, logger, OnStart, PuppeteerUtil, PuppeteerWorkerFactory} from "ppspider";
-import {Page} from "puppeteer";
+import {appInfo, Job, logger, OnStart, Page, PuppeteerUtil} from "ppspider";
 
 export class TestTask {
 
     @OnStart({
-        urls: "http://www.baidu.com",
-        workerFactory: PuppeteerWorkerFactory
+        urls: "http://www.baidu.com"
     })
     async index(page: Page, job: Job) {
         await PuppeteerUtil.defaultViewPort(page);
 
         await PuppeteerUtil.setImgLoad(page, false);
 
-        const hisResWait = PuppeteerUtil.onceResponse(page, "https://www.baidu.com/his\\?.*", async response => {
-            const resStr = await response.text();
-            logger.debug(resStr);
-            const resJson = PuppeteerUtil.jsonp(resStr);
-            logger.debug(JSON.stringify(resJson, null, 4));
-        });
+        // const hisResWait = PuppeteerUtil.onceResponse(page, "https://www.baidu.com/his\\?.*", async response => {
+        //     const resStr = await response.text();
+        //     logger.debug(resStr);
+        //     const resJson = PuppeteerUtil.jsonp(resStr);
+        //     logger.debug(JSON.stringify(resJson, null, 4));
+        // });
 
-        await page.goto("http://www.baidu.com");
-        logger.debug(JSON.stringify(await hisResWait, null, 4));
+        await page.goto(job.url);
+        // logger.debug(JSON.stringify(await hisResWait, null, 4));
 
         await PuppeteerUtil.addJquery(page);
         await PuppeteerUtil.scrollToBottom(page, 5000, 100, 1000);

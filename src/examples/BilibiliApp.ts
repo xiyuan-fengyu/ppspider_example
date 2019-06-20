@@ -6,11 +6,10 @@ import {
     Job,
     JobOverride,
     Launcher, NetworkTracing,
-    OnStart, PromiseUtil,
+    OnStart, Page, PromiseUtil,
     PuppeteerUtil,
     PuppeteerWorkerFactory
 } from "ppspider";
-import {Page} from "puppeteer";
 
 /**
  * 抓取 https://www.bilibili.com/ 视频信息和评论
@@ -29,8 +28,7 @@ class BilibiliTask {
     }
 
     @OnStart({
-        urls: "https://www.bilibili.com/",
-        workerFactory: PuppeteerWorkerFactory
+        urls: "https://www.bilibili.com/"
     })
     @AddToQueue({ name: "videos" })
     async roam(page: Page, job: Job): AddToQueueData {
@@ -45,7 +43,6 @@ class BilibiliTask {
 
     @FromQueue({
         name: "videos",
-        workerFactory: PuppeteerWorkerFactory,
         exeInterval: 5000,
         parallel: 1
     })

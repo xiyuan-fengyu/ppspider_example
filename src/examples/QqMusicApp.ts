@@ -8,10 +8,10 @@ import {
     JobOverride,
     Launcher,
     OnStart,
+    Page,
     PuppeteerUtil,
     PuppeteerWorkerFactory
 } from "ppspider";
-import {Page} from "puppeteer";
 
 /**
  * 抓取 https://y.qq.com/ 歌曲信息和评论
@@ -26,12 +26,10 @@ class QqMusicTask {
     }
 
     @OnStart({
-        urls: "https://y.qq.com/",
-        workerFactory: PuppeteerWorkerFactory
+        urls: "https://y.qq.com/"
     })
     @FromQueue({
         name: "qq_music_other",
-        workerFactory: PuppeteerWorkerFactory,
         parallel: 1,
         exeInterval: 1500
     })
@@ -53,7 +51,6 @@ class QqMusicTask {
 
     @FromQueue({
         name: "qq_music_detail",
-        workerFactory: PuppeteerWorkerFactory,
         parallel: 1
     })
     @AddToQueue([

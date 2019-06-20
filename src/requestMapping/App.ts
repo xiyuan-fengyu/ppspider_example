@@ -4,13 +4,11 @@ import {
     FromQueue,
     Job,
     Launcher, logger,
-    NoFilter,
+    NoFilter, Page,
     PuppeteerWorkerFactory,
-    RequestMapping
+    RequestMapping, RequestUtil
 } from "ppspider";
 import {Request, Response} from "express";
-import {Page} from "puppeteer";
-import * as request from "request";
 
 class TestTask {
 
@@ -34,13 +32,12 @@ class TestTask {
     }
 
     @FromQueue({
-        name: "test",
-        workerFactory: PuppeteerWorkerFactory
+        name: "test"
     })
     async test(page: Page, job: Job) {
         await page.goto(job.url);
         const title = await page.$eval("title", ele => ele.textContent);
-        request({
+        await RequestUtil.simple({
             url: job.datas.notifyUrl,
             method: "POST",
             json: {
@@ -50,7 +47,6 @@ class TestTask {
                 },
                 title: title
             }
-        }, (error, response) => {
         });
     }
 

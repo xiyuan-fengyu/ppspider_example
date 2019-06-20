@@ -3,25 +3,23 @@ import {AddToQueue, FromQueue, Job, Launcher, logger, NoneWorkerFactory, OnStart
 class TestTask {
 
     @OnStart({
-        urls: "",
-        workerFactory: NoneWorkerFactory
+        urls: ""
     })
     @AddToQueue({
         name: "test"
     })
-    async onStart(useless: any, job: Job) {
+    async onStart() {
         logger.debug("add jobs to test queue");
         return ["job_1", "job_2", "job_3"];
     }
 
     @FromQueue({
-        name: "test",
-        workerFactory: NoneWorkerFactory
+        name: "test"
     })
     @AddToQueue({
         name: "test"
     })
-    async fromQueue(useless: any, job: Job) {
+    async fromQueue(job: Job) {
         logger.debug("fetch job from test queue and execute: " + job.url);
         if (job.url === "job_2") {
             return "job_4";

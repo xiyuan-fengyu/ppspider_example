@@ -1,12 +1,11 @@
-import {Job, Launcher, logger, NoneWorkerFactory, OnStart} from "ppspider";
+import {Job, Launcher, logger, OnStart} from "ppspider";
 
 class TestTask {
 
     @OnStart({
-        urls: "",
-        workerFactory: NoneWorkerFactory
+        urls: ""
     })
-    async onStart(useless: any, job: Job) {
+    async onStart(job: Job) {
         logger.debug("this job will execute after ppspider startup", job);
     }
 

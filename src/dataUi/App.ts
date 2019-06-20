@@ -10,9 +10,9 @@ import {
     NoFilter,
     PuppeteerUtil,
     PuppeteerWorkerFactory,
-    ViewEncapsulation
+    ViewEncapsulation,
+    Page
 } from "ppspider";
-import {Page} from "puppeteer";
 
 declare const CodeMirror: any;
 
@@ -251,8 +251,7 @@ class TestTask {
     }
 
     @FromQueue({
-        name: "dynamic",
-        workerFactory: PuppeteerWorkerFactory
+        name: "dynamic"
     })
     async dynamicJob(page: Page, job: Job) {
         await PuppeteerUtil.defaultViewPort(page);

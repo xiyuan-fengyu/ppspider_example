@@ -12,10 +12,9 @@ import {
     PuppeteerUtil,
     PuppeteerWorkerFactory,
     RequestMapping,
-    Transient,
-    ViewEncapsulation
+    ViewEncapsulation,
+    Page
 } from "ppspider";
-import {Page} from "puppeteer";
 import {Request, Response} from "express";
 
 @DataUi({
@@ -90,8 +89,7 @@ class NetworkTracingTask {
     }
 
     @FromQueue({
-        name: "networkTracing",
-        workerFactory: PuppeteerWorkerFactory
+        name: "networkTracing"
     })
     async networkTracing(page: Page, job: Job) {
         this.networkTracingTestUi.onProcess(job.url + " 正在打开");

@@ -4,10 +4,9 @@ class TestTask {
 
     @OnTime({
         urls: "",
-        cron: "*/5 * * * * *",
-        workerFactory: NoneWorkerFactory
+        cron: "*/5 * * * * *"
     })
-    async onTime(useless: any, job: Job) {
+    async onTime(job: Job) {
         logger.debug("this job will execute every 5 seconds", job);
     }
 
