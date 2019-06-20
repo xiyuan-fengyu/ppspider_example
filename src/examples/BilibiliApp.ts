@@ -249,5 +249,5 @@ class BilibiliTask {
 class App {}
 
 const config = {
-    maxReplyPageIndex: 3, // 最多只抓取前两页的评论
+    maxReplyPageIndex: 3, // 最多只抓取前三页的评论
 };
