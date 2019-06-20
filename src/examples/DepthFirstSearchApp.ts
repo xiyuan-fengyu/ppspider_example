@@ -2,12 +2,14 @@ import {
     AddToQueue,
     DefaultPriorityQueue,
     FromQueue,
-    Job, JobOverride,
+    Job,
+    JobOverride,
     Launcher,
     logger,
-    OnStart, Page,
+    OnStart,
     PuppeteerUtil,
-    PuppeteerWorkerFactory
+    PuppeteerWorkerFactory,
+    Page
 } from "ppspider";
 
 class TestTask {

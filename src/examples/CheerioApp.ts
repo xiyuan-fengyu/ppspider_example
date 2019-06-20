@@ -6,7 +6,6 @@ import {
     FromQueue,
     Job,
     Launcher,
-    NoneWorkerFactory,
     OnStart,
     RequestUtil
 } from "ppspider";

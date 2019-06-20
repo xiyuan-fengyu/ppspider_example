@@ -1,4 +1,4 @@
-import {appInfo, Job, Launcher, logger, NoneWorkerFactory, OnStart, OnTime, PromiseUtil} from "ppspider";
+import {appInfo, Job, Launcher, logger, OnStart, OnTime, PromiseUtil} from "ppspider";
 
 class TestTask {
 

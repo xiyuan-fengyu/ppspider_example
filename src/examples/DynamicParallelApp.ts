@@ -1,4 +1,4 @@
-import {AddToQueue, FromQueue, Job, Launcher, logger, NoneWorkerFactory, OnTime} from "ppspider";
+import {AddToQueue, FromQueue, Job, Launcher, logger, OnTime} from "ppspider";
 
 class TestTask {
 

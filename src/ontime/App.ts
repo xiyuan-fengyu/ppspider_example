@@ -1,4 +1,4 @@
-import {Job, Launcher, logger, NoneWorkerFactory, OnTime} from "ppspider";
+import {Job, Launcher, logger, OnTime} from "ppspider";
 
 class TestTask {
 
