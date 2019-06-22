@@ -6,7 +6,7 @@ import {
     FromQueue,
     Job,
     Launcher,
-    OnStart,
+    OnStart, OnTime,
     RequestUtil
 } from "ppspider";
 import * as cheerio from "cheerio";
@@ -15,12 +15,9 @@ class MziTuTask {
 
     private userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36";
 
-    @OnStart({
-        urls: "https://www.mzitu.com/"
-    })
-    @FromQueue({
-        name: "img_list_pages"
-    })
+    @OnStart({urls: "https://www.mzitu.com/"})
+    @OnTime({urls: "https://www.mzitu.com/", cron: "0 0 12 * * *"})
+    @FromQueue({name: "img_list_pages"})
     @AddToQueue([
         {name: "img_list_pages"},
         {name: "img_detail_pages"}
