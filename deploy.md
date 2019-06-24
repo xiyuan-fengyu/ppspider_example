@@ -3,7 +3,7 @@
 ```bash
 # 构建 ppspider_env image
 echo -e '
-FROM xiyuanfengyu/ppspider_env
+FROM docker.io/xiyuanfengyu/ppspider_env
 
 ARG ROOT_PASSWORD=123456
 ARG NPM_REGISTRY=https://registry.npm.taobao.org
