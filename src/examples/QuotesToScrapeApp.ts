@@ -8,9 +8,9 @@ import {
     OnStart,
     RequestUtil
 } from "ppspider";
-import * as cheerio from "cheerio";
 import * as url from "url";
 import * as crypto from "crypto";
+import * as Cheerio from "cheerio";
 
 function md5(text: string) {
     return crypto.createHash("md5").update(Buffer.from(text)).digest('hex');
@@ -30,7 +30,7 @@ class QuotesTask {
         job.depth == 0 && logger.info("open http://localhost:9000/#/dataUi/DbHelperUi, choose quotes collection and submit, you will say the quotes.");
 
         const htmlRes = await RequestUtil.simple({url: job.url});
-        const $ = cheerio.load(htmlRes.body);
+        const $ = Cheerio.load(htmlRes.body);
 
         const quotes = $("div.quote").map((quoteI, quoteEle) => {
             const $quoteEle = $(quoteEle);

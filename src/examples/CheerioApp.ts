@@ -9,7 +9,7 @@ import {
     OnStart, OnTime,
     RequestUtil
 } from "ppspider";
-import * as cheerio from "cheerio";
+import * as Cheerio from "cheerio";
 
 class MziTuTask {
 
@@ -32,7 +32,7 @@ class MziTuTask {
             }
         });
 
-        const $ = cheerio.load(htmlRes.body);
+        const $ = Cheerio.load(htmlRes.body);
 
         const listUrls = $("nav div.nav-links a.page-numbers").map((index, element) => {
             const href = element.attribs.href;
@@ -80,7 +80,7 @@ class MziTuTask {
             }
         });
 
-        const $ = cheerio.load(htmlRes.body);
+        const $ = Cheerio.load(htmlRes.body);
 
         const idpM = job.url.match("^https://www\\.mzitu\\.com/(\\d+)(/(\\d+))?/?$");
         job.datas.id = parseInt(idpM[1]);
