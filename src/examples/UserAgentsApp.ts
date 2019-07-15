@@ -67,8 +67,8 @@ class UserAgentsTask {
 export interface UserAgent {
     _id: string,
     type: string,
-    shortName: string,
-    version: number,
+    shortName?: string,
+    version: number | string,
     os: string,
     hardware: string
 }        
@@ -79,8 +79,12 @@ export class UserAgents {
 
     private static userAgents: UserAgent[] = userAgents;
     
-    private static randomInArr(arr: UserAgent[]) {
-        return arr.length == 0 ? null : arr[Math.floor(arr.length * Math.random())];
+    private static randomUserAgentInArr(arr: UserAgent[]) {
+        return arr.length == 0 ? null : arr[Math.floor(arr.length * Math.random())]._id;
+    }
+    
+    static random() {
+        return this.randomUserAgentInArr(this.userAgents);
     }
 
     static filterByRegex(reg: string | RegExp) {
@@ -88,7 +92,7 @@ export class UserAgents {
     }
 
     static randomByRegex(reg: string | RegExp) {
-        return this.randomInArr(this.filterByRegex(reg));
+        return this.randomUserAgentInArr(this.filterByRegex(reg));
     }
 
     static filterByPredict(predict: (item: UserAgent) => boolean) {
@@ -96,7 +100,7 @@ export class UserAgents {
     }
 
     static randomByPredict(predict: (item: UserAgent) => boolean) {
-        return this.randomInArr(this.randomByPredict(predict));
+        return this.randomUserAgentInArr(this.filterByPredict(predict));
     }
     
 }
