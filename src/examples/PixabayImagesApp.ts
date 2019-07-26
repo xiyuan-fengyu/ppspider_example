@@ -28,7 +28,8 @@ class PixabayImagesTask {
         const $ = Cheerio.load(htmlRes.body);
         const imgSrcs = $(".media_list .search_results .item").find("img[srcset], img[data-lazy-srcset]").map((imgI, img) => {
             const set = (img.attribs.srcset || img.attribs["data-lazy-srcset"]).split(", ");
-            return set[set.length - 1].split(" ")[0];
+            // return set[set.length - 1].split(" ")[0]; // 下载最大分辨率
+            return set[0].split(" ")[0]; // 下载最小分辨率
         }).get();
         const nextPageUrl = $(".media_list > a.pure-button[href^='/images/search/?pagi=']").map((aI, a) => {
             return url.resolve(job.url, a.attribs.href);
@@ -49,8 +50,8 @@ class PixabayImagesTask {
             `
         });
         const [ , name, format] = /.*\/([^/]*?)__\d+\.(jpg|jpeg|png)/i.exec(job.url);
-        FileUtil.mkdirs(appInfo.workplace + "/images/" + name);
-        FileUtil.write(appInfo.workplace + "/images/" + name + "/source." + format, imgRes.body);
+        FileUtil.mkdirs(appInfo.workplace + "/images");
+        FileUtil.write(appInfo.workplace + "/images/" + name + "." + format, imgRes.body);
     }
 
 }
