@@ -28,10 +28,8 @@ class TestTask {
     async index(job: Job) {
         const page = await this.puppeteerWorkerFactories[+job.url].get();
         try {
-            await (async () => {
-                await page.goto("https://www.google.com");
-                logger.debug(await page.evaluate(() => document.title));
-            })();
+            await page.goto("https://www.google.com");
+            logger.debug(await page.evaluate(() => document.title));
         }
         finally {
             await page.close();
