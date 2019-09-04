@@ -3,7 +3,7 @@ import {AddToQueue, FromQueue, Job, JobOverride, Launcher, logger, OnStart} from
 class TestTask {
 
     @OnStart({
-        urls: ""
+        urls: "onStart"
     })
     @AddToQueue({
         name: "test"
@@ -14,16 +14,17 @@ class TestTask {
     }
 
     @JobOverride("test")
-    overrideJobKey(job: Job) {
+    overrideJobInfo(job: Job, parentJob: Job) {
         // job_2#1 和 job_3#2 两个任务的key将改为 job_2，job_3，然后被 BloonFilter 过滤掉
         job.key = job.url.split("#")[0];
+        job.datas.referer = parentJob.url;
     }
 
     @FromQueue({
         name: "test"
     })
     async fromQueue(job: Job) {
-        logger.debug("fetch job from test queue and execute: " + job.url);
+        logger.debug("fetch job from test queue and execute: " + job.url + ", referer: " + job.datas.referer);
     }
 
 }
