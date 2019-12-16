@@ -9,7 +9,7 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",
     "mysql": "^2.16.0",
-    "ppspider": "^2.2.3-preview.1567576452664",
+    "ppspider": "^2.2.3-preview.1574909694087",
     "ssh2": "^0.6.1"
   },
   "devDependencies": {
