@@ -1,51 +1,49 @@
-import {AddToQueue, FromQueue, Job, JobOverride, Launcher, OnStart} from "ppspider";
+import {Job, Launcher, logger, OnStart} from "ppspider";
 
 class TestTask {
 
-    // 多种方法设置 maxTry，取最大值
-
-    // 方法一，在 JobOverride 回调函数中修改 job,datas._.maxTry
-    @JobOverride("OnStart_TestTask_root")
-    overrideMaxTry(job: Job) {
-        // 这里可以有条件地修改某些任务的最大尝试次数
-        (job.datas._ || (job.datas._ = {} as any)).maxTry = 10;
-        // 等价于
-        // if (!job.datas._) {
-        //     job.datas._ = {};
-        // }
-        // job.datas._.maxTry = 10;
+    // 默认该队列所有任务最大尝试次数为 3
+    @OnStart({urls: ""})
+    async try0(job: Job) {
+        logger.debug(job.queue + ": " + job.tryNum);
+        throw new Error();
     }
 
-    @OnStart({urls: "root_job", maxTry: 5}) // 方法三，统一设置该类任务的最大尝试次数
-    @AddToQueue({name: "sub_jobs"})
-    async root(job: Job) {
-        console.log(job.queue + " " + job.datas._.maxTry);
-
-        // 方法二，用子任务的url构建job，并设置job的maxTry
-        return new Job({
-            url: "sub_job",
-            datas: {
-                _: {
-                    maxTry: 10
-                }
-            }
-        });
+    // 设置该队列所有任务的最大尝试次数为 5
+    @OnStart({urls: "", maxTry: 5})
+    async try1(job: Job) {
+        logger.debug(job.queue + ": " + job.tryNum);
+        throw new Error();
     }
 
-    @FromQueue({name: "sub_jobs"})
-    async sub(job: Job) {
-        console.log(job.queue + " " + job.datas._.maxTry);
+    // 设置该队列所有任务无限次尝试
+    @OnStart({urls: "", maxTry: -1})
+    async try2(job: Job) {
+        logger.debug(job.queue + ": " + job.tryNum);
+        throw new Error();
+    }
+
+    // 设置该队列所有任务无限次尝试
+    @OnStart({urls: "", maxTry: -1})
+    async try3(job: Job) {
+        !job.datas._ && (job.datas._ = {});
+        if (!job.datas._.maxTry) {
+            // 有条件地设置某些任务的最大尝试次数
+            job.datas._.maxTry = 5;
+        }
+        logger.debug(job.queue + ": " + job.tryNum);
+        throw new Error();
     }
 
 }
 
 @Launcher({
-    workplace: "workplace",
+    workplace: "workplace_maxTry",
     tasks: [
         TestTask
     ],
     workerFactorys: [
     ],
-    webUiPort: 9001
+    webUiPort: 9000
 })
 class App {}
