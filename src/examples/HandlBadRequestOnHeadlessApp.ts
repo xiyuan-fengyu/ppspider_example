@@ -23,7 +23,7 @@ class TestTask {
         const [feedUrlP, feedUrlR] = PromiseUtil.createPromiseResolve();
         page.on("request", async req => {
             if (req.url().indexOf("/api/pc/feed/") > -1) {
-                // 无头模式下这个请求返回空字符串，拦截后自行发起请求才拿的到正确内容
+                // 无头模式下这个请求返回空字符串，拦截后用魔改后的js计算sinature，才拿的到正确内容
                 let feedUrl = req.url();
                 feedUrl = feedUrl.substring(0, feedUrl.indexOf("&_signature="));
                 // language=JavaScript 1.6
