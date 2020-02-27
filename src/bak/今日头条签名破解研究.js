@@ -1,6 +1,32 @@
 /*
 在正常浏览器和非正常浏览器（webdriver驱动的浏览器）中打开 https://www.toutiao.com/ch/car_new_arrival/
-然后分别在控制台中复制运行运行这个js的内容
+在network中ctrl+F搜索 _signature
+在 lib_7403688.js 中找
+o.data._signature = utils.tacSign(o.url, o.data)),
+继续在这个文件搜 utils.tacSign
+    tacSign: function(e, t) {
+        var n = "";
+        /^http/.test(e) || (/\/toutiao\//.test(e) || (e = "/toutiao" + e),
+        e = location.protocol + "//" + location.host + e);
+        for (var r in t)
+            n += "&" + r + "=" + encodeURIComponent(t[r]);
+        e += e.indexOf("?") > -1 ? e.indexOf("&") > -1 ? n : n.slice(1) : "?" + n.slice(1);
+        var o = {
+            url: e
+        }
+          , i = window.byted_acrawler.sign ? window.byted_acrawler.sign(o) : "";
+        return i
+    }
+发现最终调用的 byted_acrawler.sign
+
+在console中输入
+console.log(byted_acrawler.sign)
+点击下面输出的函数体
+会打开一个VM窗口
+复制并美化VM窗口中的js代码
+加了一些调试用的日志代码，得到下面的代码
+
+然后分别在正常和非正常控制台中复制运行下面魔改后的js内容
 
 正常浏览器中能找到这样的日志
 z13e(TAC_STR, 312, 8, , [object Object], null)
@@ -57,7 +83,7 @@ z13e(TAC_STR, 2856, 155, , [object Object], null)
 z13e(TAC_STR, 312, 8, , [object Object], null)
 z13e(TAC_STR, 312, 8, , [object Object], null) => false
 
-对比发现， z13e(TAC_STR, 1914, 256, , [object Object], null) 这一步调用是关键，经过试验，直接hook返回false就成功了
+对比发现， z13e(TAC_STR, 1914, 256, , [object Object], null) 这一步调用结果是关键，经过试验，直接hook返回false签名就成功通过了
  */
 
 var _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ?
