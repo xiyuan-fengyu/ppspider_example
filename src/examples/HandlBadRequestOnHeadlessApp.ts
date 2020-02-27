@@ -506,14 +506,8 @@ class TestTask {
         await PuppeteerUtil.setImgLoad(page, false);
         await page.goto(job.url);
 
-        // await page.evaluate(() => {
-        //     console.log(window["byted_acrawler"]);
-        //     console.log(window["byted_acrawler"].sign("https://www.toutiao.com/toutiao/api/pc/feed/?category=car_new_arrival&utm_source=toutiao&widen=1&max_behot_time=0&max_behot_time_tmp=0&tadrequire=true&as=A1054E75247E9A7&cp=5E547E595A775E1"));
-        // });
-
         // 等待 新闻列表的url 获取成功
         const feedUrl: string = await feedUrlP;
-        // 自行通过RequestUtil发起请求，cookie是必须的，少了请求不成功
         const res = await RequestUtil.simple({
             url: feedUrl,
             headerLines: `
